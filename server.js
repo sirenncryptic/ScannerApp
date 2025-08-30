@@ -62,28 +62,15 @@ app.get('/test-loyverse', async (req, res) => {
             }
         });
 
-        logDebug('Loyverse API Response', {
-            status: response.status,
-            statusText: response.statusText,
-            headers: Object.fromEntries(response.headers.entries())
-        });
-
         if (response.ok) {
             const data = await response.json();
-            logDebug('Loyverse API Data', data);
             res.json({ 
                 success: true, 
                 message: 'Loyverse API connected successfully!',
-                stores: data.stores ? data.stores.length : 0,
-                data: data
+                stores: data.stores ? data.stores.length : 0
             });
         } else {
             const errorText = await response.text();
-            logError('Loyverse API Test Failed', new Error(`HTTP ${response.status}`), {
-                status: response.status,
-                statusText: response.statusText,
-                errorBody: errorText
-            });
             res.json({ 
                 success: false, 
                 error: `API Error: ${response.status} ${response.statusText}`,
@@ -91,7 +78,6 @@ app.get('/test-loyverse', async (req, res) => {
             });
         }
     } catch (error) {
-        logError('Loyverse API Test Exception', error);
         res.json({ 
             success: false, 
             error: 'Connection failed',
@@ -104,11 +90,7 @@ app.get('/test-loyverse', async (req, res) => {
 
 async function updateLoyverseInventory(itemData, newCount) {
     try {
-        logDebug('Starting Loyverse Update', { 
-            variant_id: itemData.variant_id, 
-            item_id: itemData.item_id,
-            newCount 
-        });
+        console.log(`Starting inventory update for variant_id: ${itemData.variant_id}`);
         
         // Get store ID
         const storeResponse = await fetch(`${LOYVERSE_API_BASE}/stores`, {
@@ -128,9 +110,9 @@ async function updateLoyverseInventory(itemData, newCount) {
         }
         
         const storeId = storeData.stores[0].id;
-        console.log(`📍 Using store ID: ${storeId}`);
+        console.log(`Using store ID: ${storeId}`);
 
-        // Check if we have variant_id (we should have it from the SKU search)
+        // Check if we have variant_id
         if (!itemData.variant_id) {
             throw new Error('No variant_id available - this should have been set during product lookup');
         }
@@ -144,7 +126,7 @@ async function updateLoyverseInventory(itemData, newCount) {
             }]
         };
 
-        logDebug('Loyverse Update Payload (Correct Format)', adjustmentPayload);
+        console.log(`Updating inventory with payload:`, JSON.stringify(adjustmentPayload, null, 2));
 
         const response = await fetch(`${LOYVERSE_API_BASE}/inventory`, {
             method: 'POST',
@@ -155,16 +137,9 @@ async function updateLoyverseInventory(itemData, newCount) {
             body: JSON.stringify(adjustmentPayload)
         });
 
-        logDebug('Loyverse Update Response', {
-            status: response.status,
-            statusText: response.statusText,
-            ok: response.ok
-        });
-
         if (response.ok) {
             const responseData = await response.json();
-            logDebug('Update Success Data', responseData);
-            console.log(`✅ Successfully updated variant ${itemData.variant_id} to ${newCount} units`);
+            console.log(`Successfully updated variant ${itemData.variant_id} to ${newCount} units`);
             return { success: true, message: `Updated to ${newCount} units` };
         } else {
             const errorText = await response.text();
@@ -189,13 +164,10 @@ async function updateLoyverseInventory(itemData, newCount) {
 
 async function findProductInLoyverse(scannedCode) {
     try {
-        logDebug('Product Search Started', { scannedCode });
+        console.log(`Searching for product with SKU: ${scannedCode}`);
         
-        // STEP 1: Try searching by SKU in variants endpoint first
-        console.log(`🔍 Searching variants by SKU: ${scannedCode}`);
+        // STEP 1: Search by SKU in variants endpoint (Loyverse recommended approach)
         const variantsUrl = `${LOYVERSE_API_BASE}/variants?sku=${encodeURIComponent(scannedCode)}&limit=50`;
-        
-        logDebug('Variants API Request', { url: variantsUrl });
         
         const variantsResponse = await fetch(variantsUrl, {
             headers: {
@@ -206,11 +178,11 @@ async function findProductInLoyverse(scannedCode) {
 
         if (variantsResponse.ok) {
             const variantsData = await variantsResponse.json();
-            logDebug('Variants API Response Data', variantsData);
+            console.log(`Variants search returned ${variantsData.variants ? variantsData.variants.length : 0} results`);
             
             if (variantsData.variants && variantsData.variants.length > 0) {
                 const variant = variantsData.variants[0];
-                console.log(`✅ Found variant by SKU: ${variant.sku}, variant_id: ${variant.id}`);
+                console.log(`Found variant: SKU=${variant.sku}, variant_id=${variant.variant_id}`);
                 
                 // Get full item details
                 const itemResponse = await fetch(`${LOYVERSE_API_BASE}/items/${variant.item_id}`, {
@@ -222,31 +194,32 @@ async function findProductInLoyverse(scannedCode) {
                 
                 if (itemResponse.ok) {
                     const item = await itemResponse.json();
-                    console.log(`✅ Found product: ${item.item_name}`);
+                    console.log(`Found product: ${item.item_name}`);
                     
                     const stock = await getCurrentStock(item);
                     
-                    return {
+                    const result = {
                         success: true,
                         product_name: item.item_name,
                         category_name: item.category_name || 'Unknown',
                         stock: stock,
                         item_id: item.id,
-                        variant_id: variant.id,
+                        variant_id: variant.variant_id, // FIXED: Use variant_id instead of id
                         item: item,
                         variant: variant
                     };
+                    
+                    console.log(`Returning result with variant_id: ${result.variant_id}`);
+                    return result;
                 }
             } else {
-                console.log(`No variants found via SKU search, trying alternative approach...`);
+                console.log(`No variants found for SKU: ${scannedCode}`);
             }
         }
 
-        // STEP 2: Alternative approach - search items then extract variant_id (Loyverse's fallback)
-        console.log(`🔍 Searching items by SKU: ${scannedCode}`);
+        // STEP 2: Alternative approach - search items then get variants
+        console.log(`Trying items search for SKU: ${scannedCode}`);
         const itemsUrl = `${LOYVERSE_API_BASE}/items?sku=${encodeURIComponent(scannedCode)}&limit=50`;
-        
-        logDebug('Items API Request', { url: itemsUrl });
         
         const itemsResponse = await fetch(itemsUrl, {
             headers: {
@@ -257,101 +230,47 @@ async function findProductInLoyverse(scannedCode) {
 
         if (itemsResponse.ok) {
             const itemsData = await itemsResponse.json();
-            logDebug('Items API Response Data', itemsData);
             
             if (itemsData.items && itemsData.items.length > 0) {
                 const item = itemsData.items[0];
-                console.log(`✅ Found item by SKU: ${item.item_name}`);
+                console.log(`Found item: ${item.item_name}`);
                 
-                // Debug: Log the entire item structure to see what's available
-                console.log(`🔍 Item structure analysis:`);
-                console.log(`- Item ID: ${item.id}`);
-                console.log(`- Item name: ${item.item_name}`);
-                console.log(`- Has variants property: ${!!item.variants}`);
-                console.log(`- Variants array length: ${item.variants ? item.variants.length : 'N/A'}`);
+                // Get variants for this item
+                const variantsForItemResponse = await fetch(`${LOYVERSE_API_BASE}/variants?item_ids=${item.id}&limit=10`, {
+                    headers: {
+                        'Authorization': `Bearer ${LOYVERSE_TOKEN}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
                 
-                if (item.variants) {
-                    console.log(`- Variants array content:`, JSON.stringify(item.variants, null, 2));
-                } else {
-                    console.log(`- No variants property found in item`);
-                }
-                
-                // Try to extract variant_id from the item's variants array
-                let variantId = null;
-                let variant = null;
-                
-                if (item.variants && item.variants.length > 0) {
-                    variant = item.variants[0]; // Use the first (default) variant
-                    variantId = variant.id;
-                    console.log(`✅ Extracted variant_id from item.variants: ${variantId}`);
-                } else {
-                    // Sometimes the variant might be in a different property or structure
-                    console.log(`❌ No variants found in item.variants array`);
-                    console.log(`🔍 Checking for other variant properties...`);
+                if (variantsForItemResponse.ok) {
+                    const variantsForItemData = await variantsForItemResponse.json();
                     
-                    // Log all top-level properties to see what's available
-                    console.log(`Available item properties:`, Object.keys(item));
-                    
-                    // Check if there are any variant-related properties
-                    const variantKeys = Object.keys(item).filter(key => 
-                        key.toLowerCase().includes('variant') || key.toLowerCase().includes('sku')
-                    );
-                    console.log(`Variant-related properties:`, variantKeys);
-                    
-                    // Last resort - try to get variants via a separate API call
-                    console.log(`🔍 Trying to fetch variants separately for item ${item.id}...`);
-                    try {
-                        const variantsForItemResponse = await fetch(`${LOYVERSE_API_BASE}/variants?item_ids=${item.id}&limit=10`, {
-                            headers: {
-                                'Authorization': `Bearer ${LOYVERSE_TOKEN}`,
-                                'Content-Type': 'application/json'
-                            }
-                        });
+                    if (variantsForItemData.variants && variantsForItemData.variants.length > 0) {
+                        const variant = variantsForItemData.variants[0];
+                        console.log(`Found variant via item lookup: ${variant.variant_id}`);
                         
-                        if (variantsForItemResponse.ok) {
-                            const variantsForItemData = await variantsForItemResponse.json();
-                            console.log(`Variants API response for item:`, JSON.stringify(variantsForItemData, null, 2));
-                            
-                            if (variantsForItemData.variants && variantsForItemData.variants.length > 0) {
-                                variant = variantsForItemData.variants[0];
-                                variantId = variant.id;
-                                console.log(`✅ Found variant via separate API call: ${variantId}`);
-                            }
-                        }
-                    } catch (error) {
-                        console.log(`❌ Separate variants API call failed:`, error.message);
+                        const stock = await getCurrentStock(item);
+                        
+                        const result = {
+                            success: true,
+                            product_name: item.item_name,
+                            category_name: item.category_name || 'Unknown',
+                            stock: stock,
+                            item_id: item.id,
+                            variant_id: variant.variant_id, // FIXED: Use variant_id instead of id
+                            item: item,
+                            variant: variant
+                        };
+                        
+                        console.log(`Returning result with variant_id: ${result.variant_id}`);
+                        return result;
                     }
                 }
-                
-                if (variantId) {
-                    const stock = await getCurrentStock(item);
-                    
-                    return {
-                        success: true,
-                        product_name: item.item_name,
-                        category_name: item.category_name || 'Unknown',
-                        stock: stock,
-                        item_id: item.id,
-                        variant_id: variantId,
-                        item: item,
-                        variant: variant
-                    };
-                } else {
-                    console.log(`❌ Could not find variant_id for item ${item.item_name} (${item.id})`);
-                    logDebug('Complete item data', item);
-                }
-            } else {
-                console.log(`No items found for SKU: ${scannedCode}`);
             }
-        } else {
-            const errorText = await itemsResponse.text();
-            logError('Items API Failed', new Error(`HTTP ${itemsResponse.status}`), {
-                status: itemsResponse.status,
-                errorBody: errorText
-            });
         }
 
-        console.log(`❌ Product not found: ${scannedCode}`);
+        console.log(`Product not found: ${scannedCode}`);
         return { success: false, error: `Product with SKU "${scannedCode}" not found` };
 
     } catch (error) {
@@ -362,8 +281,6 @@ async function findProductInLoyverse(scannedCode) {
 
 async function getCurrentStock(item) {
     try {
-        logDebug('Getting stock for item', { item_id: item.id });
-        
         // Get store ID first
         const storeResponse = await fetch(`${LOYVERSE_API_BASE}/stores`, {
             headers: {
@@ -373,24 +290,19 @@ async function getCurrentStock(item) {
         });
 
         if (!storeResponse.ok) {
-            logError('Store API Failed', new Error(`HTTP ${storeResponse.status}`));
             return 0;
         }
         
         const storeData = await storeResponse.json();
-        logDebug('Store Data', storeData);
         
         if (!storeData.stores || storeData.stores.length === 0) {
-            console.log('⚠️ No stores found');
             return 0;
         }
         
         const storeId = storeData.stores[0].id;
-        console.log(`📍 Using store: ${storeId}`);
 
         // Get inventory levels
         const inventoryUrl = `${LOYVERSE_API_BASE}/inventory?store_ids=${storeId}&item_ids=${item.id}`;
-        logDebug('Inventory Request', { url: inventoryUrl });
         
         const inventoryResponse = await fetch(inventoryUrl, {
             headers: {
@@ -399,33 +311,18 @@ async function getCurrentStock(item) {
             }
         });
 
-        logDebug('Inventory Response', {
-            status: inventoryResponse.status,
-            statusText: inventoryResponse.statusText
-        });
-
         if (inventoryResponse.ok) {
             const inventoryData = await inventoryResponse.json();
-            logDebug('Inventory Data', inventoryData);
             
             if (inventoryData.inventory_levels && inventoryData.inventory_levels.length > 0) {
                 const stock = Math.round(inventoryData.inventory_levels[0].in_stock || 0);
-                console.log(`📦 Current stock: ${stock}`);
                 return stock;
             }
-        } else {
-            const errorText = await inventoryResponse.text();
-            logError('Inventory API Failed', new Error(`HTTP ${inventoryResponse.status}`), {
-                status: inventoryResponse.status,
-                errorBody: errorText
-            });
         }
 
-        console.log('📦 No inventory data found, returning 0');
         return 0;
         
     } catch (error) {
-        logError('getCurrentStock', error, { item_id: item.id });
         return 0;
     }
 }
@@ -440,7 +337,7 @@ app.post('/scan', async (req, res) => {
         return res.json({ success: false, error: 'No barcode provided' });
     }
     
-    console.log(`\n🔍 Scanning SKU: ${barcode}`);
+    console.log(`\nScanning SKU: ${barcode}`);
     
     try {
         // Look up product in Loyverse using SKU search
@@ -462,7 +359,7 @@ app.post('/scan', async (req, res) => {
             lastScanned: new Date()
         });
         
-        console.log(`✅ ${productResult.product_name}: Local count ${newCount}, Loyverse stock ${productResult.stock}, variant_id: ${productResult.variant_id}`);
+        console.log(`${productResult.product_name}: Local count ${newCount}, Loyverse stock ${productResult.stock}, variant_id: ${productResult.variant_id}`);
         
         // Return response with real product data
         res.json({
@@ -483,7 +380,7 @@ app.post('/scan', async (req, res) => {
 // Update all counts to Loyverse
 app.post('/update-loyverse', async (req, res) => {
     try {
-        console.log('🔄 Starting Loyverse inventory update...');
+        console.log('Starting Loyverse inventory update...');
         
         if (scannedItems.size === 0) {
             return res.json({ 
@@ -503,10 +400,10 @@ app.post('/update-loyverse', async (req, res) => {
                 
                 if (updateResult.success) {
                     updates.push(`${barcode}: ${itemData.counted}`);
-                    console.log(`✅ ${barcode} updated successfully`);
+                    console.log(`${barcode} updated successfully`);
                 } else {
                     errors.push(`${barcode}: ${updateResult.error}`);
-                    console.log(`❌ ${barcode} update failed: ${updateResult.error}`);
+                    console.log(`${barcode} update failed: ${updateResult.error}`);
                 }
                 
                 // Add delay between updates to avoid rate limiting
@@ -515,7 +412,7 @@ app.post('/update-loyverse', async (req, res) => {
         }
         
         const message = `Updated ${updates.length} items` + (errors.length > 0 ? `, ${errors.length} errors` : '');
-        console.log('✅ Update complete:', message);
+        console.log('Update complete:', message);
         
         res.json({ 
             success: true, 
@@ -535,7 +432,7 @@ app.post('/update-loyverse', async (req, res) => {
 app.post('/reset', (req, res) => {
     scannedCounts.clear();
     scannedItems.clear();
-    console.log('🔄 All counts reset');
+    console.log('All counts reset');
     res.json({ success: true, message: 'All counts reset' });
 });
 
@@ -550,9 +447,9 @@ app.get('/items', (req, res) => {
 
 // Start server
 app.listen(PORT, () => {
-    console.log(`\n🚀 Scanner app running on port ${PORT}`);
-    console.log('🔗 Loyverse API integration active (correct workflow)');
-    console.log(`📍 Server URL: http://localhost:${PORT}`);
-    console.log(`🧪 Test API: http://localhost:${PORT}/test-loyverse`);
+    console.log(`\nScanner app running on port ${PORT}`);
+    console.log('Loyverse API integration active');
+    console.log(`Server URL: http://localhost:${PORT}`);
+    console.log(`Test API: http://localhost:${PORT}/test-loyverse`);
     console.log('\n');
 });
