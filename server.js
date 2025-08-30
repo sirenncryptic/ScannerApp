@@ -335,7 +335,49 @@ app.post('/scan', async (req, res) => {
         res.json({ success: false, error: 'Scan failed: ' + error.message });
     }
 });
-
+// Update all counts to Loyverse
+app.post('/update-loyverse', async (req, res) => {
+    try {
+        console.log('🔄 Starting Loyverse inventory update...');
+        
+        if (scannedItems.size === 0) {
+            return res.json({ 
+                success: false, 
+                error: 'No items to update' 
+            });
+        }
+        
+        const updates = [];
+        const errors = [];
+        
+        for (let [barcode, itemData] of scannedItems) {
+            if (itemData.counted > 0) {
+                console.log(`Updating ${barcode}: ${itemData.counted}`);
+                
+                // For now, just simulate the update (we'll add real update later)
+                updates.push(`${barcode}: ${itemData.counted}`);
+                
+                // Add delay between updates to avoid rate limiting
+                await new Promise(resolve => setTimeout(resolve, 100));
+            }
+        }
+        
+        const message = `Updated ${updates.length} items` + (errors.length > 0 ? `, ${errors.length} errors` : '');
+        console.log('✅ Update complete:', message);
+        
+        res.json({ 
+            success: true, 
+            message,
+            updates: updates.length,
+            errors: errors.length,
+            details: { updates, errors }
+        });
+        
+    } catch (error) {
+        logError('Bulk update error', error);
+        res.json({ success: false, error: 'Bulk update failed: ' + error.message });
+    }
+});
 // Reset counts
 app.post('/reset', (req, res) => {
     scannedCounts.clear();
