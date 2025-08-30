@@ -13,27 +13,33 @@
         .log { background: #fff3cd; padding: 15px; border-radius: 5px; margin-bottom: 20px; height: 120px; overflow-y: scroll; font-family: monospace; font-size: 12px; }
         .results { background: #d4edda; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
         .item { padding: 10px; background: white; margin: 10px 0; border-radius: 5px; border-left: 4px solid #2ecc71; }
-        .stats { display: flex; gap: 20px; }
+        .stats { display: flex; gap: 20px; margin-bottom: 20px; }
         .stat { flex: 1; text-align: center; background: #f8f9fa; padding: 20px; border-radius: 8px; }
         .stat-num { font-size: 30px; font-weight: bold; color: #2ecc71; }
-        .reset-btn { width: 100%; padding: 10px; background: #e74c3c; color: white; border: none; font-size: 14px; border-radius: 5px; cursor: pointer; margin-bottom: 20px; }
+        .btn-row { display: flex; gap: 10px; margin-bottom: 20px; }
+        .btn-half { flex: 1; padding: 12px; border: none; border-radius: 5px; cursor: pointer; font-size: 14px; }
+        .btn-loyverse { background: #3498db; color: white; }
+        .btn-reset { background: #e74c3c; color: white; }
     </style>
 </head>
 <body>
     <div class="app">
         <div class="title">
             <h1>Inked Out Scanner</h1>
-            <p>RENDER VERSION - Enter Key Works! Auto-Count Active</p>
+            <p>LOYVERSE CONNECTED - Real inventory data</p>
         </div>
         
         <div class="scanner">
-            <input type="text" id="barcodeInput" class="barcode-input" placeholder="Scan barcode here and press Enter...">
+            <input type="text" id="barcodeInput" class="barcode-input" placeholder="Scan barcode (TESTLOY)...">
             <button class="scan-btn" onclick="performScan()">SCAN NOW</button>
         </div>
         
-        <div class="log" id="logArea">Scanner ready with auto-counting...<br></div>
+        <div class="log" id="logArea">Scanner ready - Loyverse API connected<br></div>
         
-        <button class="reset-btn" onclick="resetCounts()">RESET ALL COUNTS</button>
+        <div class="btn-row">
+            <button class="btn-half btn-loyverse" onclick="updateLoyverse()">UPDATE LOYVERSE INVENTORY</button>
+            <button class="btn-half btn-reset" onclick="resetCounts()">RESET COUNTS</button>
+        </div>
         
         <div class="results">
             <h3>Scanned Items</h3>
@@ -66,7 +72,11 @@
             
             let itemsHtml = '';
             scannedItems.forEach((item, code) => {
-                itemsHtml += `<div class="item"><strong>${item.product}</strong><br>Code: ${code} | Count: ${item.counted}</div>`;
+                itemsHtml += `<div class="item">
+                    <strong>${item.product}</strong><br>
+                    Code: ${code} | Scanned: ${item.counted} | Loyverse Stock: ${item.currentStock}
+                    <br>Difference: ${item.difference > 0 ? '+' : ''}${item.difference}
+                </div>`;
             });
             document.getElementById('itemsList').innerHTML = itemsHtml;
         }
@@ -80,7 +90,7 @@
                 return;
             }
             
-            addLog(`Scanning: ${barcode}`);
+            addLog(`Looking up: ${barcode} in Loyverse...`);
             
             fetch('/scan', {
                 method: 'POST',
@@ -90,7 +100,7 @@
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    addLog(`SUCCESS: ${data.product} - Count: ${data.counted}`);
+                    addLog(`FOUND: ${data.product} - Count: ${data.counted} (Stock: ${data.currentStock})`);
                     updateDisplay(barcode, data);
                     input.value = '';
                     input.focus();
@@ -103,11 +113,34 @@
             });
         }
         
+        function updateLoyverse() {
+            if (scannedItems.size === 0) {
+                addLog('No scans to update');
+                return;
+            }
+            
+            if (!confirm('Update Loyverse inventory with scanned counts?')) return;
+            
+            addLog('Updating Loyverse inventory...');
+            
+            fetch('/update-loyverse', { method: 'POST' })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    addLog(`SUCCESS: ${data.message}`);
+                } else {
+                    addLog(`UPDATE FAILED: ${data.error}`);
+                }
+            })
+            .catch(error => {
+                addLog(`Update error: ${error}`);
+            });
+        }
+        
         function resetCounts() {
             if (confirm('Reset all scan counts?')) {
                 fetch('/reset', { method: 'POST' })
-                .then(response => response.json())
-                .then(data => {
+                .then(() => {
                     addLog('All counts reset');
                     totalScans = 0;
                     scannedItems.clear();
@@ -118,18 +151,17 @@
             }
         }
         
-        // ENTER KEY SUPPORT
+        // Enter key support
         document.getElementById('barcodeInput').addEventListener('keydown', function(e) {
             if (e.key === 'Enter') {
-                addLog('Enter key detected!');
                 performScan();
             }
         });
         
-        // Focus input when page loads
+        // Initialize
         window.addEventListener('load', function() {
             document.getElementById('barcodeInput').focus();
-            addLog('Scanner loaded - Enter key active, auto-counting enabled');
+            addLog('Loyverse inventory scanner ready');
         });
     </script>
 </body>
