@@ -1,1 +1,92 @@
-
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Inked Out Supply Scanner</title>
+    <style>
+        body { font-family: Arial; background: #2ecc71; padding: 20px; margin: 0; }
+        .app { max-width: 500px; margin: 0 auto; background: white; border-radius: 10px; padding: 30px; }
+        .title { text-align: center; color: #2ecc71; margin-bottom: 30px; }
+        .scanner { background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
+        .barcode-input { width: 100%; padding: 15px; font-size: 20px; border: 2px solid #ddd; border-radius: 5px; margin-bottom: 15px; }
+        .scan-btn { width: 100%; padding: 15px; background: #2ecc71; color: white; border: none; font-size: 18px; border-radius: 5px; cursor: pointer; }
+        .log { background: #fff3cd; padding: 15px; border-radius: 5px; margin-bottom: 20px; height: 120px; overflow-y: scroll; font-family: monospace; font-size: 12px; }
+        .results { background: #d4edda; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <div class="title">
+            <h1>Inked Out Scanner</h1>
+            <p>RENDER VERSION - Enter Key Works!</p>
+        </div>
+        
+        <div class="scanner">
+            <input type="text" id="barcodeInput" class="barcode-input" placeholder="Scan barcode here and press Enter...">
+            <button class="scan-btn" onclick="performScan()">SCAN NOW</button>
+        </div>
+        
+        <div class="log" id="logArea">Scanner ready...<br></div>
+        
+        <div class="results">
+            <h3>Scanned Items</h3>
+            <div id="itemsList">No items scanned yet</div>
+        </div>
+    </div>
+    
+    <script>
+        function addLog(message) {
+            const log = document.getElementById('logArea');
+            const time = new Date().toLocaleTimeString();
+            log.innerHTML += `${time}: ${message}<br>`;
+            log.scrollTop = log.scrollHeight;
+        }
+        
+        function performScan() {
+            const input = document.getElementById('barcodeInput');
+            const barcode = input.value.trim();
+            
+            if (!barcode) {
+                addLog('No barcode entered');
+                return;
+            }
+            
+            addLog(`Scanning: ${barcode}`);
+            
+            fetch('/scan', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({barcode: barcode})
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    addLog(`SUCCESS: ${data.product} - Count: ${data.counted}`);
+                    document.getElementById('itemsList').innerHTML = 
+                        `<strong>${data.product}</strong><br>Code: ${barcode} | Count: ${data.counted}`;
+                    input.value = '';
+                    input.focus();
+                } else {
+                    addLog(`ERROR: ${data.error}`);
+                }
+            })
+            .catch(error => {
+                addLog(`Connection error: ${error}`);
+            });
+        }
+        
+        // ENTER KEY SUPPORT (this should work now!)
+        document.getElementById('barcodeInput').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                addLog('Enter key detected!');
+                performScan();
+            }
+        });
+        
+        // Focus input when page loads
+        window.addEventListener('load', function() {
+            document.getElementById('barcodeInput').focus();
+            addLog('Scanner loaded - Enter key should work now!');
+        });
+    </script>
+</body>
+</html>
