@@ -102,29 +102,6 @@ app.get('/test-loyverse', async (req, res) => {
 
 // LOYVERSE API FUNCTIONS
 
-async function getItemVariants(itemId) {
-    try {
-        const response = await fetch(`${LOYVERSE_API_BASE}/variants?item_ids=${itemId}&limit=50`, {
-            headers: {
-                'Authorization': `Bearer ${LOYVERSE_TOKEN}`,
-                'Content-Type': 'application/json'
-            }
-        });
-
-        if (response.ok) {
-            const data = await response.json();
-            if (data.variants && data.variants.length > 0) {
-                // Return the first variant
-                return data.variants[0].id;
-            }
-        }
-        return null;
-    } catch (error) {
-        logError('getItemVariants', error, { itemId });
-        return null;
-    }
-}
-
 async function updateLoyverseInventory(itemData, newCount) {
     try {
         logDebug('Starting Loyverse Update', { item_id: itemData.item_id, newCount });
@@ -152,12 +129,27 @@ async function updateLoyverseInventory(itemData, newCount) {
         // Make sure we have a variant_id
         let variantId = itemData.variant_id;
         if (!variantId) {
-            console.log('No variant_id found, fetching variants...');
-            variantId = await getItemVariants(itemData.item_id);
-            if (!variantId) {
-                throw new Error('Could not find variant_id for this item');
+            console.log('Getting variants for item...');
+            const variantsResponse = await fetch(`${LOYVERSE_API_BASE}/variants?item_ids=${itemData.item_id}&limit=10`, {
+                headers: {
+                    'Authorization': `Bearer ${LOYVERSE_TOKEN}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            if (variantsResponse.ok) {
+                const variantsData = await variantsResponse.json();
+                logDebug('Variants Data', variantsData);
+                
+                if (variantsData.variants && variantsData.variants.length > 0) {
+                    variantId = variantsData.variants[0].id;
+                    console.log(`✅ Found variant_id: ${variantId}`);
+                }
             }
-            console.log(`✅ Found variant_id: ${variantId}`);
+        }
+
+        if (!variantId) {
+            throw new Error('Could not find any variants for this item');
         }
 
         // Create inventory adjustment payload
@@ -213,14 +205,15 @@ async function updateLoyverseInventory(itemData, newCount) {
     }
 }
 
-async function findProductInLoyverse(barcode) {
+async function findProductInLoyverse(scannedCode) {
     try {
-        logDebug('Product Search Started', { barcode });
+        logDebug('Product Search Started', { scannedCode });
         
-        // Search by SKU first
-        let url = `${LOYVERSE_API_BASE}/items?sku=${encodeURIComponent(barcode)}&limit=50`;
+        // First, search by SKU in items endpoint
+        console.log('🔍 Searching items by SKU...');
+        let url = `${LOYVERSE_API_BASE}/items?sku=${encodeURIComponent(scannedCode)}&limit=50`;
         
-        logDebug('API Request', { url, headers: { Authorization: 'Bearer [HIDDEN]' } });
+        logDebug('Items API Request', { url, headers: { Authorization: 'Bearer [HIDDEN]' } });
         
         let response = await fetch(url, {
             headers: {
@@ -229,7 +222,7 @@ async function findProductInLoyverse(barcode) {
             }
         });
 
-        logDebug('API Response', {
+        logDebug('Items API Response', {
             status: response.status,
             statusText: response.statusText,
             ok: response.ok
@@ -237,11 +230,11 @@ async function findProductInLoyverse(barcode) {
 
         if (response.ok) {
             const data = await response.json();
-            logDebug('API Response Data', data);
+            logDebug('Items API Response Data', data);
             
             if (data.items && data.items.length > 0) {
                 const item = data.items[0];
-                console.log(`✅ Found product: ${item.item_name}`);
+                console.log(`✅ Found product via items: ${item.item_name}`);
                 
                 const stock = await getCurrentStock(item);
                 
@@ -263,9 +256,9 @@ async function findProductInLoyverse(barcode) {
             });
         }
 
-        // Search variants endpoint if items search didn't work
-        console.log('Searching variants...');
-        url = `${LOYVERSE_API_BASE}/variants?sku=${encodeURIComponent(barcode)}&limit=50`;
+        // Second, search by SKU in variants endpoint (this is the correct way!)
+        console.log('🔍 Searching variants by SKU...');
+        url = `${LOYVERSE_API_BASE}/variants?sku=${encodeURIComponent(scannedCode)}&limit=50`;
         response = await fetch(url, {
             headers: {
                 'Authorization': `Bearer ${LOYVERSE_TOKEN}`,
@@ -285,6 +278,7 @@ async function findProductInLoyverse(barcode) {
             
             if (data.variants && data.variants.length > 0) {
                 const variant = data.variants[0];
+                console.log(`✅ Found variant by SKU: ${variant.sku}`);
                 
                 // Get full item details
                 const itemResponse = await fetch(`${LOYVERSE_API_BASE}/items/${variant.item_id}`, {
@@ -319,11 +313,11 @@ async function findProductInLoyverse(barcode) {
             });
         }
 
-        console.log(`❌ Product not found: ${barcode}`);
-        return { success: false, error: `Product not found: ${barcode}` };
+        console.log(`❌ Product not found: ${scannedCode}`);
+        return { success: false, error: `Product with SKU "${scannedCode}" not found` };
 
     } catch (error) {
-        logError('findProductInLoyverse', error, { barcode });
+        logError('findProductInLoyverse', error, { scannedCode });
         return { success: false, error: 'API connection failed: ' + error.message };
     }
 }
@@ -408,10 +402,10 @@ app.post('/scan', async (req, res) => {
         return res.json({ success: false, error: 'No barcode provided' });
     }
     
-    console.log(`\n🔍 Scanning barcode: ${barcode}`);
+    console.log(`\n🔍 Scanning code: ${barcode} (searching as SKU)`);
     
     try {
-        // Look up product in Loyverse
+        // Look up product in Loyverse using SKU search
         const productResult = await findProductInLoyverse(barcode);
         
         if (!productResult.success) {
@@ -519,7 +513,7 @@ app.get('/items', (req, res) => {
 // Start server
 app.listen(PORT, () => {
     console.log(`\n🚀 Scanner app running on port ${PORT}`);
-    console.log('🔗 Loyverse API integration active');
+    console.log('🔗 Loyverse API integration active (using SKU search)');
     console.log(`📍 Server URL: http://localhost:${PORT}`);
     console.log(`🧪 Test API: http://localhost:${PORT}/test-loyverse`);
     console.log('\n');
