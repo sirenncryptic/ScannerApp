@@ -102,6 +102,29 @@ app.get('/test-loyverse', async (req, res) => {
 
 // LOYVERSE API FUNCTIONS
 
+async function getItemVariants(itemId) {
+    try {
+        const response = await fetch(`${LOYVERSE_API_BASE}/variants?item_ids=${itemId}&limit=50`, {
+            headers: {
+                'Authorization': `Bearer ${LOYVERSE_TOKEN}`,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            if (data.variants && data.variants.length > 0) {
+                // Return the first variant
+                return data.variants[0].id;
+            }
+        }
+        return null;
+    } catch (error) {
+        logError('getItemVariants', error, { itemId });
+        return null;
+    }
+}
+
 async function updateLoyverseInventory(itemData, newCount) {
     try {
         logDebug('Starting Loyverse Update', { item_id: itemData.item_id, newCount });
@@ -126,11 +149,22 @@ async function updateLoyverseInventory(itemData, newCount) {
         const storeId = storeData.stores[0].id;
         console.log(`📍 Using store ID: ${storeId}`);
 
+        // Make sure we have a variant_id
+        let variantId = itemData.variant_id;
+        if (!variantId) {
+            console.log('No variant_id found, fetching variants...');
+            variantId = await getItemVariants(itemData.item_id);
+            if (!variantId) {
+                throw new Error('Could not find variant_id for this item');
+            }
+            console.log(`✅ Found variant_id: ${variantId}`);
+        }
+
         // Create inventory adjustment payload
         const adjustmentPayload = {
             inventory_levels: [{
                 item_id: itemData.item_id,
-                variant_id: itemData.variant_id || null,
+                variant_id: variantId,
                 store_id: storeId,
                 stock_after: newCount,
                 reason: 'Physical Inventory Count via Scanner'
@@ -217,6 +251,7 @@ async function findProductInLoyverse(barcode) {
                     category_name: item.category_name || 'Unknown',
                     stock: stock,
                     item_id: item.id,
+                    variant_id: null, // Will be fetched when needed
                     item: item
                 };
             }
