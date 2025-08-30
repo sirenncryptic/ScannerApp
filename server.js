@@ -263,11 +263,67 @@ async function findProductInLoyverse(scannedCode) {
                 const item = itemsData.items[0];
                 console.log(`✅ Found item by SKU: ${item.item_name}`);
                 
-                // Extract variant_id from the item's variants array (Loyverse's suggested approach)
+                // Debug: Log the entire item structure to see what's available
+                console.log(`🔍 Item structure analysis:`);
+                console.log(`- Item ID: ${item.id}`);
+                console.log(`- Item name: ${item.item_name}`);
+                console.log(`- Has variants property: ${!!item.variants}`);
+                console.log(`- Variants array length: ${item.variants ? item.variants.length : 'N/A'}`);
+                
+                if (item.variants) {
+                    console.log(`- Variants array content:`, JSON.stringify(item.variants, null, 2));
+                } else {
+                    console.log(`- No variants property found in item`);
+                }
+                
+                // Try to extract variant_id from the item's variants array
+                let variantId = null;
+                let variant = null;
+                
                 if (item.variants && item.variants.length > 0) {
-                    const variant = item.variants[0]; // Use the first (default) variant
-                    console.log(`✅ Extracted variant_id from item: ${variant.id}`);
+                    variant = item.variants[0]; // Use the first (default) variant
+                    variantId = variant.id;
+                    console.log(`✅ Extracted variant_id from item.variants: ${variantId}`);
+                } else {
+                    // Sometimes the variant might be in a different property or structure
+                    console.log(`❌ No variants found in item.variants array`);
+                    console.log(`🔍 Checking for other variant properties...`);
                     
+                    // Log all top-level properties to see what's available
+                    console.log(`Available item properties:`, Object.keys(item));
+                    
+                    // Check if there are any variant-related properties
+                    const variantKeys = Object.keys(item).filter(key => 
+                        key.toLowerCase().includes('variant') || key.toLowerCase().includes('sku')
+                    );
+                    console.log(`Variant-related properties:`, variantKeys);
+                    
+                    // Last resort - try to get variants via a separate API call
+                    console.log(`🔍 Trying to fetch variants separately for item ${item.id}...`);
+                    try {
+                        const variantsForItemResponse = await fetch(`${LOYVERSE_API_BASE}/variants?item_ids=${item.id}&limit=10`, {
+                            headers: {
+                                'Authorization': `Bearer ${LOYVERSE_TOKEN}`,
+                                'Content-Type': 'application/json'
+                            }
+                        });
+                        
+                        if (variantsForItemResponse.ok) {
+                            const variantsForItemData = await variantsForItemResponse.json();
+                            console.log(`Variants API response for item:`, JSON.stringify(variantsForItemData, null, 2));
+                            
+                            if (variantsForItemData.variants && variantsForItemData.variants.length > 0) {
+                                variant = variantsForItemData.variants[0];
+                                variantId = variant.id;
+                                console.log(`✅ Found variant via separate API call: ${variantId}`);
+                            }
+                        }
+                    } catch (error) {
+                        console.log(`❌ Separate variants API call failed:`, error.message);
+                    }
+                }
+                
+                if (variantId) {
                     const stock = await getCurrentStock(item);
                     
                     return {
@@ -276,13 +332,13 @@ async function findProductInLoyverse(scannedCode) {
                         category_name: item.category_name || 'Unknown',
                         stock: stock,
                         item_id: item.id,
-                        variant_id: variant.id, // Got it from the item's variants array!
+                        variant_id: variantId,
                         item: item,
                         variant: variant
                     };
                 } else {
-                    console.log(`❌ Item found but no variants in variants array`);
-                    logDebug('Item without variants', item);
+                    console.log(`❌ Could not find variant_id for item ${item.item_name} (${item.id})`);
+                    logDebug('Complete item data', item);
                 }
             } else {
                 console.log(`No items found for SKU: ${scannedCode}`);
