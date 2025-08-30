@@ -4,9 +4,12 @@
   "description": "Barcode Scanner for Loyverse",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "dev": "node server.js"
   },
   "dependencies": {
-    "express": "^4.18.2"
+    "express": "^4.18.2",
+    "node-fetch": "^2.6.7",
+    "dotenv": "^16.0.3"
   }
 }
