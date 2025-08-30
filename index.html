@@ -9,15 +9,21 @@
         .scanner { background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
         .barcode-input { width: 100%; padding: 15px; font-size: 20px; border: 2px solid #ddd; border-radius: 5px; margin-bottom: 15px; }
         .scan-btn { width: 100%; padding: 15px; background: #2ecc71; color: white; border: none; font-size: 18px; border-radius: 5px; cursor: pointer; }
+        .scan-btn:hover { background: #27ae60; }
         .log { background: #fff3cd; padding: 15px; border-radius: 5px; margin-bottom: 20px; height: 120px; overflow-y: scroll; font-family: monospace; font-size: 12px; }
         .results { background: #d4edda; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
+        .item { padding: 10px; background: white; margin: 10px 0; border-radius: 5px; border-left: 4px solid #2ecc71; }
+        .stats { display: flex; gap: 20px; }
+        .stat { flex: 1; text-align: center; background: #f8f9fa; padding: 20px; border-radius: 8px; }
+        .stat-num { font-size: 30px; font-weight: bold; color: #2ecc71; }
+        .reset-btn { width: 100%; padding: 10px; background: #e74c3c; color: white; border: none; font-size: 14px; border-radius: 5px; cursor: pointer; margin-bottom: 20px; }
     </style>
 </head>
 <body>
     <div class="app">
         <div class="title">
             <h1>Inked Out Scanner</h1>
-            <p>RENDER VERSION - Enter Key Works!</p>
+            <p>RENDER VERSION - Enter Key Works! Auto-Count Active</p>
         </div>
         
         <div class="scanner">
@@ -25,20 +31,44 @@
             <button class="scan-btn" onclick="performScan()">SCAN NOW</button>
         </div>
         
-        <div class="log" id="logArea">Scanner ready...<br></div>
+        <div class="log" id="logArea">Scanner ready with auto-counting...<br></div>
+        
+        <button class="reset-btn" onclick="resetCounts()">RESET ALL COUNTS</button>
         
         <div class="results">
             <h3>Scanned Items</h3>
             <div id="itemsList">No items scanned yet</div>
         </div>
+        
+        <div class="stats">
+            <div class="stat"><div class="stat-num" id="totalCount">0</div><div>Total Scans</div></div>
+            <div class="stat"><div class="stat-num" id="uniqueCount">0</div><div>Unique Items</div></div>
+        </div>
     </div>
     
     <script>
+        let totalScans = 0;
+        let scannedItems = new Map();
+        
         function addLog(message) {
             const log = document.getElementById('logArea');
             const time = new Date().toLocaleTimeString();
             log.innerHTML += `${time}: ${message}<br>`;
             log.scrollTop = log.scrollHeight;
+        }
+        
+        function updateDisplay(barcode, data) {
+            totalScans++;
+            scannedItems.set(barcode, data);
+            
+            document.getElementById('totalCount').textContent = totalScans;
+            document.getElementById('uniqueCount').textContent = scannedItems.size;
+            
+            let itemsHtml = '';
+            scannedItems.forEach((item, code) => {
+                itemsHtml += `<div class="item"><strong>${item.product}</strong><br>Code: ${code} | Count: ${item.counted}</div>`;
+            });
+            document.getElementById('itemsList').innerHTML = itemsHtml;
         }
         
         function performScan() {
@@ -61,8 +91,7 @@
             .then(data => {
                 if (data.success) {
                     addLog(`SUCCESS: ${data.product} - Count: ${data.counted}`);
-                    document.getElementById('itemsList').innerHTML = 
-                        `<strong>${data.product}</strong><br>Code: ${barcode} | Count: ${data.counted}`;
+                    updateDisplay(barcode, data);
                     input.value = '';
                     input.focus();
                 } else {
@@ -74,7 +103,22 @@
             });
         }
         
-        // ENTER KEY SUPPORT (this should work now!)
+        function resetCounts() {
+            if (confirm('Reset all scan counts?')) {
+                fetch('/reset', { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    addLog('All counts reset');
+                    totalScans = 0;
+                    scannedItems.clear();
+                    document.getElementById('totalCount').textContent = '0';
+                    document.getElementById('uniqueCount').textContent = '0';
+                    document.getElementById('itemsList').innerHTML = 'No items scanned yet';
+                });
+            }
+        }
+        
+        // ENTER KEY SUPPORT
         document.getElementById('barcodeInput').addEventListener('keydown', function(e) {
             if (e.key === 'Enter') {
                 addLog('Enter key detected!');
@@ -85,7 +129,7 @@
         // Focus input when page loads
         window.addEventListener('load', function() {
             document.getElementById('barcodeInput').focus();
-            addLog('Scanner loaded - Enter key should work now!');
+            addLog('Scanner loaded - Enter key active, auto-counting enabled');
         });
     </script>
 </body>
