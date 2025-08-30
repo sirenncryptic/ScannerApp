@@ -102,6 +102,83 @@ app.get('/test-loyverse', async (req, res) => {
 
 // LOYVERSE API FUNCTIONS
 
+async function updateLoyverseInventory(itemData, newCount) {
+    try {
+        logDebug('Starting Loyverse Update', { item_id: itemData.item_id, newCount });
+        
+        // Get store ID
+        const storeResponse = await fetch(`${LOYVERSE_API_BASE}/stores`, {
+            headers: {
+                'Authorization': `Bearer ${LOYVERSE_TOKEN}`,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (!storeResponse.ok) {
+            throw new Error(`Cannot get store information: ${storeResponse.status}`);
+        }
+        
+        const storeData = await storeResponse.json();
+        if (!storeData.stores || storeData.stores.length === 0) {
+            throw new Error('No stores found');
+        }
+        
+        const storeId = storeData.stores[0].id;
+        console.log(`📍 Using store ID: ${storeId}`);
+
+        // Create inventory adjustment payload
+        const adjustmentPayload = {
+            inventory_levels: [{
+                item_id: itemData.item_id,
+                variant_id: itemData.variant_id || null,
+                store_id: storeId,
+                stock_after: newCount,
+                reason: 'Physical Inventory Count via Scanner'
+            }]
+        };
+
+        logDebug('Loyverse Update Payload', adjustmentPayload);
+
+        const response = await fetch(`${LOYVERSE_API_BASE}/inventory`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${LOYVERSE_TOKEN}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(adjustmentPayload)
+        });
+
+        logDebug('Loyverse Update Response', {
+            status: response.status,
+            statusText: response.statusText,
+            ok: response.ok
+        });
+
+        if (response.ok) {
+            const responseData = await response.json();
+            logDebug('Update Success Data', responseData);
+            console.log(`✅ Successfully updated ${itemData.item_id} to ${newCount} units`);
+            return { success: true, message: `Updated to ${newCount} units` };
+        } else {
+            const errorText = await response.text();
+            logError('Loyverse Update Failed', new Error(`HTTP ${response.status}`), {
+                status: response.status,
+                statusText: response.statusText,
+                errorBody: errorText,
+                payload: adjustmentPayload
+            });
+            return { success: false, error: `Update failed: ${response.status} - ${errorText}` };
+        }
+
+    } catch (error) {
+        logError('updateLoyverseInventory', error, { 
+            item_id: itemData.item_id, 
+            newCount 
+        });
+        return { success: false, error: error.message };
+    }
+}
+
 async function findProductInLoyverse(barcode) {
     try {
         logDebug('Product Search Started', { barcode });
@@ -335,6 +412,7 @@ app.post('/scan', async (req, res) => {
         res.json({ success: false, error: 'Scan failed: ' + error.message });
     }
 });
+
 // Update all counts to Loyverse
 app.post('/update-loyverse', async (req, res) => {
     try {
@@ -354,8 +432,15 @@ app.post('/update-loyverse', async (req, res) => {
             if (itemData.counted > 0) {
                 console.log(`Updating ${barcode}: ${itemData.counted}`);
                 
-                // For now, just simulate the update (we'll add real update later)
-                updates.push(`${barcode}: ${itemData.counted}`);
+                const updateResult = await updateLoyverseInventory(itemData, itemData.counted);
+                
+                if (updateResult.success) {
+                    updates.push(`${barcode}: ${itemData.counted}`);
+                    console.log(`✅ ${barcode} updated successfully`);
+                } else {
+                    errors.push(`${barcode}: ${updateResult.error}`);
+                    console.log(`❌ ${barcode} update failed: ${updateResult.error}`);
+                }
                 
                 // Add delay between updates to avoid rate limiting
                 await new Promise(resolve => setTimeout(resolve, 100));
@@ -378,6 +463,7 @@ app.post('/update-loyverse', async (req, res) => {
         res.json({ success: false, error: 'Bulk update failed: ' + error.message });
     }
 });
+
 // Reset counts
 app.post('/reset', (req, res) => {
     scannedCounts.clear();
