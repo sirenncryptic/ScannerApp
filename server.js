@@ -104,7 +104,11 @@ app.get('/test-loyverse', async (req, res) => {
 
 async function updateLoyverseInventory(itemData, newCount) {
     try {
-        logDebug('Starting Loyverse Update', { item_id: itemData.item_id, newCount });
+        logDebug('Starting Loyverse Update', { 
+            variant_id: itemData.variant_id, 
+            item_id: itemData.item_id,
+            newCount 
+        });
         
         // Get store ID
         const storeResponse = await fetch(`${LOYVERSE_API_BASE}/stores`, {
@@ -126,44 +130,21 @@ async function updateLoyverseInventory(itemData, newCount) {
         const storeId = storeData.stores[0].id;
         console.log(`📍 Using store ID: ${storeId}`);
 
-        // Make sure we have a variant_id
-        let variantId = itemData.variant_id;
-        if (!variantId) {
-            console.log('Getting variants for item...');
-            const variantsResponse = await fetch(`${LOYVERSE_API_BASE}/variants?item_ids=${itemData.item_id}&limit=10`, {
-                headers: {
-                    'Authorization': `Bearer ${LOYVERSE_TOKEN}`,
-                    'Content-Type': 'application/json'
-                }
-            });
-            
-            if (variantsResponse.ok) {
-                const variantsData = await variantsResponse.json();
-                logDebug('Variants Data', variantsData);
-                
-                if (variantsData.variants && variantsData.variants.length > 0) {
-                    variantId = variantsData.variants[0].id;
-                    console.log(`✅ Found variant_id: ${variantId}`);
-                }
-            }
+        // Check if we have variant_id (we should have it from the SKU search)
+        if (!itemData.variant_id) {
+            throw new Error('No variant_id available - this should have been set during product lookup');
         }
 
-        if (!variantId) {
-            throw new Error('Could not find any variants for this item');
-        }
-
-        // Create inventory adjustment payload
+        // Create inventory adjustment payload using Loyverse's exact format
         const adjustmentPayload = {
             inventory_levels: [{
-                item_id: itemData.item_id,
-                variant_id: variantId,
+                variant_id: itemData.variant_id,
                 store_id: storeId,
-                stock_after: newCount,
-                reason: 'Physical Inventory Count via Scanner'
+                stock_after: newCount
             }]
         };
 
-        logDebug('Loyverse Update Payload', adjustmentPayload);
+        logDebug('Loyverse Update Payload (Correct Format)', adjustmentPayload);
 
         const response = await fetch(`${LOYVERSE_API_BASE}/inventory`, {
             method: 'POST',
@@ -183,7 +164,7 @@ async function updateLoyverseInventory(itemData, newCount) {
         if (response.ok) {
             const responseData = await response.json();
             logDebug('Update Success Data', responseData);
-            console.log(`✅ Successfully updated ${itemData.item_id} to ${newCount} units`);
+            console.log(`✅ Successfully updated variant ${itemData.variant_id} to ${newCount} units`);
             return { success: true, message: `Updated to ${newCount} units` };
         } else {
             const errorText = await response.text();
@@ -198,7 +179,8 @@ async function updateLoyverseInventory(itemData, newCount) {
 
     } catch (error) {
         logError('updateLoyverseInventory', error, { 
-            item_id: itemData.item_id, 
+            variant_id: itemData.variant_id,
+            item_id: itemData.item_id,
             newCount 
         });
         return { success: false, error: error.message };
@@ -209,57 +191,13 @@ async function findProductInLoyverse(scannedCode) {
     try {
         logDebug('Product Search Started', { scannedCode });
         
-        // First, search by SKU in items endpoint
-        console.log('🔍 Searching items by SKU...');
-        let url = `${LOYVERSE_API_BASE}/items?sku=${encodeURIComponent(scannedCode)}&limit=50`;
+        // STEP 1: Search by SKU in variants endpoint (Loyverse's recommended approach)
+        console.log(`🔍 Searching variants by SKU: ${scannedCode}`);
+        const url = `${LOYVERSE_API_BASE}/variants?sku=${encodeURIComponent(scannedCode)}&limit=50`;
         
-        logDebug('Items API Request', { url, headers: { Authorization: 'Bearer [HIDDEN]' } });
+        logDebug('Variants API Request', { url });
         
-        let response = await fetch(url, {
-            headers: {
-                'Authorization': `Bearer ${LOYVERSE_TOKEN}`,
-                'Content-Type': 'application/json'
-            }
-        });
-
-        logDebug('Items API Response', {
-            status: response.status,
-            statusText: response.statusText,
-            ok: response.ok
-        });
-
-        if (response.ok) {
-            const data = await response.json();
-            logDebug('Items API Response Data', data);
-            
-            if (data.items && data.items.length > 0) {
-                const item = data.items[0];
-                console.log(`✅ Found product via items: ${item.item_name}`);
-                
-                const stock = await getCurrentStock(item);
-                
-                return {
-                    success: true,
-                    product_name: item.item_name,
-                    category_name: item.category_name || 'Unknown',
-                    stock: stock,
-                    item_id: item.id,
-                    variant_id: null, // Will be fetched when needed
-                    item: item
-                };
-            }
-        } else {
-            const errorText = await response.text();
-            logError('Items API Failed', new Error(`HTTP ${response.status}`), {
-                status: response.status,
-                errorBody: errorText
-            });
-        }
-
-        // Second, search by SKU in variants endpoint (this is the correct way!)
-        console.log('🔍 Searching variants by SKU...');
-        url = `${LOYVERSE_API_BASE}/variants?sku=${encodeURIComponent(scannedCode)}&limit=50`;
-        response = await fetch(url, {
+        const response = await fetch(url, {
             headers: {
                 'Authorization': `Bearer ${LOYVERSE_TOKEN}`,
                 'Content-Type': 'application/json'
@@ -274,13 +212,13 @@ async function findProductInLoyverse(scannedCode) {
 
         if (response.ok) {
             const data = await response.json();
-            logDebug('Variants Response Data', data);
+            logDebug('Variants API Response Data', data);
             
             if (data.variants && data.variants.length > 0) {
                 const variant = data.variants[0];
-                console.log(`✅ Found variant by SKU: ${variant.sku}`);
+                console.log(`✅ Found variant by SKU: ${variant.sku}, variant_id: ${variant.id}`);
                 
-                // Get full item details
+                // STEP 2: Get full item details using the item_id from the variant
                 const itemResponse = await fetch(`${LOYVERSE_API_BASE}/items/${variant.item_id}`, {
                     headers: {
                         'Authorization': `Bearer ${LOYVERSE_TOKEN}`,
@@ -290,8 +228,9 @@ async function findProductInLoyverse(scannedCode) {
                 
                 if (itemResponse.ok) {
                     const item = await itemResponse.json();
-                    console.log(`✅ Found product via variant: ${item.item_name}`);
+                    console.log(`✅ Found product: ${item.item_name}`);
                     
+                    // STEP 3: Get current stock
                     const stock = await getCurrentStock(item);
                     
                     return {
@@ -300,10 +239,19 @@ async function findProductInLoyverse(scannedCode) {
                         category_name: item.category_name || 'Unknown',
                         stock: stock,
                         item_id: item.id,
-                        variant_id: variant.id,
-                        item: item
+                        variant_id: variant.id, // This is the key - we save the variant_id here!
+                        item: item,
+                        variant: variant
                     };
+                } else {
+                    const errorText = await itemResponse.text();
+                    logError('Items API Failed', new Error(`HTTP ${itemResponse.status}`), {
+                        status: itemResponse.status,
+                        errorBody: errorText
+                    });
                 }
+            } else {
+                console.log(`No variants found for SKU: ${scannedCode}`);
             }
         } else {
             const errorText = await response.text();
@@ -402,7 +350,7 @@ app.post('/scan', async (req, res) => {
         return res.json({ success: false, error: 'No barcode provided' });
     }
     
-    console.log(`\n🔍 Scanning code: ${barcode} (searching as SKU)`);
+    console.log(`\n🔍 Scanning SKU: ${barcode}`);
     
     try {
         // Look up product in Loyverse using SKU search
@@ -416,7 +364,7 @@ app.post('/scan', async (req, res) => {
         const currentCount = scannedCounts.get(barcode) || 0;
         const newCount = currentCount + 1;
         
-        // Store the count and product info
+        // Store the count and product info (including variant_id!)
         scannedCounts.set(barcode, newCount);
         scannedItems.set(barcode, {
             ...productResult,
@@ -424,7 +372,7 @@ app.post('/scan', async (req, res) => {
             lastScanned: new Date()
         });
         
-        console.log(`✅ ${productResult.product_name}: Local count ${newCount}, Loyverse stock ${productResult.stock}`);
+        console.log(`✅ ${productResult.product_name}: Local count ${newCount}, Loyverse stock ${productResult.stock}, variant_id: ${productResult.variant_id}`);
         
         // Return response with real product data
         res.json({
@@ -459,7 +407,7 @@ app.post('/update-loyverse', async (req, res) => {
         
         for (let [barcode, itemData] of scannedItems) {
             if (itemData.counted > 0) {
-                console.log(`Updating ${barcode}: ${itemData.counted}`);
+                console.log(`Updating ${barcode}: ${itemData.counted} (variant_id: ${itemData.variant_id})`);
                 
                 const updateResult = await updateLoyverseInventory(itemData, itemData.counted);
                 
@@ -513,7 +461,7 @@ app.get('/items', (req, res) => {
 // Start server
 app.listen(PORT, () => {
     console.log(`\n🚀 Scanner app running on port ${PORT}`);
-    console.log('🔗 Loyverse API integration active (using SKU search)');
+    console.log('🔗 Loyverse API integration active (correct workflow)');
     console.log(`📍 Server URL: http://localhost:${PORT}`);
     console.log(`🧪 Test API: http://localhost:${PORT}/test-loyverse`);
     console.log('\n');
