@@ -5,7 +5,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Loyverse API configuration
-const LOYVERSE_TOKEN = 'a45b05fd475f48a6be31a434a0905409';
+const LOYVERSE_TOKEN = process.env.LOYVERSE_API_TOKEN;
 const LOYVERSE_API_BASE = 'https://api.loyverse.com/v1.0';
 
 // Store scan counts and inventory data
