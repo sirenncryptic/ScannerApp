@@ -7,60 +7,54 @@
     
     <!-- PWA Manifest -->
     <link rel="manifest" href="/manifest.json">
-    <meta name="theme-color" content="#1f2937">
+    <meta name="theme-color" content="#0f172a">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="Scanner">
     
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        
         :root {
-            --primary: #1f2937;
-            --primary-light: #374151;
+            /* Modern Color Palette */
+            --primary: #0f172a;
+            --primary-light: #1e293b;
             --accent: #3b82f6;
-            --success: #059669;
-            --danger: #dc2626;
-            --warning: #d97706;
-            --gray-50: #f9fafb;
-            --gray-100: #f3f4f6;
-            --gray-200: #e5e7eb;
-            --gray-300: #d1d5db;
-            --gray-400: #9ca3af;
-            --gray-500: #6b7280;
-            --gray-600: #4b5563;
-            --gray-700: #374151;
-            --gray-800: #1f2937;
-            --gray-900: #111827;
-            --white: #ffffff;
+            --accent-light: #60a5fa;
+            --success: #10b981;
+            --success-light: #34d399;
+            --danger: #ef4444;
+            --danger-light: #f87171;
+            --warning: #f59e0b;
             
-            /* Light mode (default) */
-            --bg-primary: var(--gray-50);
-            --bg-secondary: var(--white);
-            --text-primary: var(--gray-900);
-            --text-secondary: var(--gray-700);
-            --text-muted: var(--gray-500);
-            --border-color: var(--gray-200);
-            --border-hover: var(--gray-300);
-            --input-bg: var(--white);
-            --log-bg: var(--gray-50);
+            /* Light Theme */
+            --bg-primary: #ffffff;
+            --bg-secondary: #f8fafc;
+            --bg-tertiary: #f1f5f9;
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --border-light: #f1f5f9;
+            --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            --glass: rgba(255, 255, 255, 0.9);
+            --glass-border: rgba(255, 255, 255, 0.2);
         }
         
         [data-theme="dark"] {
-            --bg-primary: #0d1117;
-            --bg-secondary: #21262d;
-            --text-primary: #f0f6fc;
-            --text-secondary: #c9d1d9;
-            --text-muted: #8b949e;
-            --border-color: #30363d;
-            --border-hover: #484f58;
-            --input-bg: #21262d;
-            --log-bg: #161b22;
-            --gray-50: #21262d;
-            --gray-100: #30363d;
-            --success: #238636;
-            --danger: #f85149;
-            --accent: #58a6ff;
-            --primary: #21262d;
-            --primary-light: #30363d;
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-tertiary: #334155;
+            --text-primary: #f8fafc;
+            --text-secondary: #cbd5e1;
+            --text-muted: #94a3b8;
+            --border: #334155;
+            --border-light: #475569;
+            --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.3), 0 1px 2px 0 rgba(0, 0, 0, 0.2);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
+            --glass: rgba(30, 41, 59, 0.8);
+            --glass-border: rgba(255, 255, 255, 0.1);
         }
         
         * {
@@ -69,88 +63,119 @@
             box-sizing: border-box;
         }
         
-        body { 
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; 
-            background-color: var(--bg-primary);
-            min-height: 100vh;
-            line-height: 1.6;
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-primary);
             color: var(--text-secondary);
+            line-height: 1.6;
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
-            transition: background-color 0.3s ease, color 0.3s ease;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
         
-        .app-header {
-            background: var(--bg-secondary);
-            border-bottom: 1px solid var(--border-color);
-            padding: 1.5rem 2rem;
+        /* Modern Header */
+        .header {
+            background: var(--glass);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--glass-border);
+            padding: 1rem 2rem;
             position: sticky;
             top: 0;
-            z-index: 100;
-            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
-            transition: background-color 0.3s ease, border-color 0.3s ease;
+            z-index: 50;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
         
         .header-content {
-            max-width: 1600px;
+            max-width: 1400px;
             margin: 0 auto;
             display: flex;
             align-items: center;
-            justify-content: space-between;
+            justify-content: between;
         }
         
-        .app-title {
-            font-size: 1.5rem;
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            flex: 1;
+        }
+        
+        .brand-icon {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, var(--accent), var(--accent-light));
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+        
+        .brand-text {
+            font-size: 1.25rem;
             font-weight: 700;
             color: var(--text-primary);
             letter-spacing: -0.025em;
         }
         
-        .header-controls {
+        .header-actions {
             display: flex;
             align-items: center;
-            gap: 2rem;
+            gap: 1.5rem;
         }
         
-        .connection-status {
+        .status-badge {
             display: flex;
             align-items: center;
-            gap: 0.75rem;
+            gap: 0.5rem;
+            background: var(--bg-secondary);
+            padding: 0.5rem 1rem;
+            border-radius: 50px;
+            border: 1px solid var(--border);
             font-size: 0.875rem;
             font-weight: 500;
-            color: var(--text-muted);
+            color: var(--text-secondary);
         }
         
-        .status-indicator {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
+        .status-dot {
+            width: 6px;
+            height: 6px;
             background: var(--success);
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
         }
         
         .theme-toggle {
-            background: var(--input-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            padding: 0.5rem;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            color: var(--text-secondary);
-            font-size: 1.125rem;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
             display: flex;
             align-items: center;
             justify-content: center;
-            width: 40px;
-            height: 40px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            color: var(--text-secondary);
+            font-size: 1.1rem;
         }
         
         .theme-toggle:hover {
-            background: var(--log-bg);
-            border-color: var(--border-hover);
+            background: var(--bg-tertiary);
+            border-color: var(--border-light);
+            transform: scale(1.05);
         }
         
-        .main-container {
-            max-width: 1600px;
+        /* Main Layout */
+        .container {
+            max-width: 1400px;
             margin: 0 auto;
             padding: 2rem;
             display: grid;
@@ -158,172 +183,225 @@
             min-height: calc(100vh - 80px);
         }
         
-        /* Mobile First - Single Column */
-        .main-container {
-            grid-template-columns: 1fr;
-        }
-        
-        /* Tablet Portrait */
-        @media (min-width: 768px) {
-            .main-container {
-                padding: 2.5rem;
-                gap: 2.5rem;
-            }
-        }
-        
-        /* Tablet Landscape & Desktop */
         @media (min-width: 1024px) {
-            .main-container {
+            .container {
                 grid-template-columns: 1fr 1fr;
                 gap: 3rem;
             }
         }
         
-        /* Large Desktop */
         @media (min-width: 1400px) {
-            .main-container {
+            .container {
                 gap: 4rem;
+                padding: 3rem;
             }
         }
         
-        .panel {
+        /* Modern Cards */
+        .card {
             background: var(--bg-secondary);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            padding: 2rem;
-            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
-            display: flex;
-            flex-direction: column;
-            transition: background-color 0.3s ease, border-color 0.3s ease;
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
         
-        @media (min-width: 768px) {
-            .panel {
-                padding: 2.5rem;
-            }
+        .card:hover {
+            box-shadow: var(--shadow-lg);
         }
         
-        .panel-header {
-            margin-bottom: 2rem;
+        .card-header {
+            padding: 2rem 2rem 1rem;
+            border-bottom: 1px solid var(--border-light);
+            background: var(--bg-primary);
         }
         
-        .panel-title {
+        .card-title {
             font-size: 1.5rem;
-            font-weight: 600;
+            font-weight: 700;
             color: var(--text-primary);
             margin-bottom: 0.5rem;
             letter-spacing: -0.025em;
         }
         
-        .panel-subtitle {
-            color: var(--text-muted);
+        .card-subtitle {
             font-size: 0.875rem;
+            color: var(--text-muted);
             font-weight: 500;
+        }
+        
+        .card-content {
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
         }
         
         /* Install Banner */
         .install-banner {
-            background: var(--accent);
-            color: var(--white);
+            background: linear-gradient(135deg, var(--accent), var(--accent-light));
+            color: white;
             padding: 1rem 1.5rem;
-            border-radius: 8px;
-            margin-bottom: 2rem;
-            text-align: center;
+            border-radius: 16px;
             cursor: pointer;
-            transition: background-color 0.2s ease;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             display: none;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .install-banner::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.6s;
+        }
+        
+        .install-banner:hover::before {
+            left: 100%;
         }
         
         .install-banner:hover {
-            background: #2563eb;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(59, 130, 246, 0.3);
         }
         
         .install-banner-text {
-            font-size: 0.875rem;
             font-weight: 600;
             margin-bottom: 0.25rem;
         }
         
         .install-banner-subtext {
-            font-size: 0.75rem;
+            font-size: 0.875rem;
             opacity: 0.9;
         }
         
-        /* Scanner Section */
-        .scanner-section {
-            flex: 0 0 auto;
-            margin-bottom: 2rem;
+        /* Modern Input */
+        .input-group {
+            position: relative;
         }
         
-        .barcode-input {
+        .input {
             width: 100%;
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 16px;
             padding: 1rem 1.25rem;
             font-size: 1rem;
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            margin-bottom: 1rem;
-            transition: all 0.2s ease;
-            outline: none;
-            background: var(--input-bg);
-            color: var(--text-secondary);
             font-weight: 500;
+            color: var(--text-primary);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            outline: none;
         }
         
-        .barcode-input:focus {
+        .input:focus {
             border-color: var(--accent);
             box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+            background: var(--bg-primary);
+        }
+        
+        .input::placeholder {
+            color: var(--text-muted);
         }
         
         @media (min-width: 768px) {
-            .barcode-input {
+            .input {
                 padding: 1.25rem 1.5rem;
                 font-size: 1.125rem;
             }
         }
         
-        .scan-btn {
-            width: 100%;
-            padding: 1rem 1.5rem;
-            background: var(--primary);
-            color: var(--white);
+        /* Modern Button */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 1rem 2rem;
             border: none;
+            border-radius: 16px;
             font-size: 0.875rem;
             font-weight: 600;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: background-color 0.2s ease;
             text-transform: uppercase;
             letter-spacing: 0.05em;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
         }
         
-        .scan-btn:hover {
-            background: var(--primary-light);
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.6s;
         }
         
-        .scan-btn:active {
-            transform: translateY(1px);
+        .btn:hover::before {
+            left: 100%;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(15, 23, 42, 0.3);
+        }
+        
+        .btn-success {
+            background: linear-gradient(135deg, var(--success), var(--success-light));
+            color: white;
+        }
+        
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(16, 185, 129, 0.3);
+        }
+        
+        .btn-outline {
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+        }
+        
+        .btn-outline:hover {
+            background: var(--bg-tertiary);
+            border-color: var(--danger);
+            color: var(--danger);
+            transform: translateY(-1px);
         }
         
         @media (min-width: 768px) {
-            .scan-btn {
-                padding: 1.25rem 2rem;
+            .btn {
+                padding: 1.25rem 2.5rem;
                 font-size: 1rem;
             }
         }
         
         /* Activity Log */
         .log {
-            background: var(--log-bg);
-            border: 1px solid var(--border-color);
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 16px;
             padding: 1.5rem;
-            border-radius: 8px;
-            margin-bottom: 2rem;
             height: 200px;
             overflow-y: auto;
-            font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+            font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
             font-size: 0.8125rem;
-            line-height: 1.5;
-            flex: 1;
+            line-height: 1.6;
             color: var(--text-secondary);
             transition: all 0.3s ease;
         }
@@ -335,43 +413,65 @@
             }
         }
         
-        /* Stats Cards */
-        .stats-grid {
+        /* Stats Grid */
+        .stats {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 1rem;
-            margin-bottom: 2rem;
+        }
+        
+        @media (min-width: 768px) {
+            .stats {
+                gap: 1.5rem;
+            }
         }
         
         .stat-card {
-            background: var(--white);
-            border: 1px solid var(--gray-200);
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 16px;
             padding: 1.5rem;
-            border-radius: 8px;
             text-align: center;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--accent), var(--accent-light));
+            border-radius: 50%;
+            transform: translate(15px, -15px);
+            opacity: 0.1;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
         }
         
         .stat-number {
             font-size: 2rem;
-            font-weight: 700;
-            margin-bottom: 0.25rem;
-            color: var(--gray-900);
+            font-weight: 800;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
             letter-spacing: -0.025em;
         }
         
         .stat-label {
             font-size: 0.75rem;
             font-weight: 600;
-            color: var(--gray-500);
+            color: var(--text-muted);
             text-transform: uppercase;
-            letter-spacing: 0.05em;
+            letter-spacing: 0.1em;
         }
         
         @media (min-width: 768px) {
-            .stats-grid {
-                gap: 1.5rem;
-            }
-            
             .stat-card {
                 padding: 2rem;
             }
@@ -385,115 +485,73 @@
             }
         }
         
-        /* Action Buttons */
-        .action-buttons {
+        /* Actions */
+        .actions {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 1rem;
         }
         
-        .action-btn {
-            padding: 0.875rem 1.25rem;
-            border: 1px solid;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 0.75rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            transition: all 0.2s ease;
-        }
-        
-        .btn-success {
-            background: var(--success);
-            border-color: var(--success);
-            color: var(--white);
-        }
-        
-        .btn-success:hover {
-            background: #047857;
-            border-color: #047857;
-        }
-        
-        .btn-danger {
-            background: var(--white);
-            border-color: var(--danger);
-            color: var(--danger);
-        }
-        
-        .btn-danger:hover {
-            background: var(--danger);
-            color: var(--white);
-        }
-        
         @media (min-width: 768px) {
-            .action-buttons {
+            .actions {
                 gap: 1.5rem;
             }
-            
-            .action-btn {
-                padding: 1rem 1.5rem;
-                font-size: 0.875rem;
+        }
+        
+        /* Items List */
+        .items-container {
+            flex: 1;
+            overflow-y: auto;
+            padding-right: 0.5rem;
+        }
+        
+        .item {
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            animation: slideIn 0.3s ease;
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
             }
         }
         
-        /* Items Panel */
-        .items-header {
-            margin-bottom: 2rem;
-            border-bottom: 1px solid var(--gray-200);
-            padding-bottom: 1rem;
-        }
-        
-        .items-title {
-            font-size: 1.25rem;
-            font-weight: 600;
-            color: var(--gray-900);
-            margin-bottom: 0.5rem;
-        }
-        
-        .items-subtitle {
-            color: var(--gray-500);
-            font-size: 0.875rem;
-            font-weight: 400;
-        }
-        
-        .items-list {
-            flex: 1;
-            overflow-y: auto;
-        }
-        
-        .item-card {
-            background: var(--white);
-            border: 1px solid var(--gray-200);
-            border-radius: 8px;
-            padding: 1.5rem;
-            margin-bottom: 1rem;
-            transition: border-color 0.2s ease, box-shadow 0.2s ease;
-        }
-        
-        .item-card:hover {
-            border-color: var(--gray-300);
-            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+        .item:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+            border-color: var(--accent);
         }
         
         .item-name {
             font-size: 1rem;
-            font-weight: 600;
-            color: var(--gray-900);
+            font-weight: 700;
+            color: var(--text-primary);
             margin-bottom: 0.5rem;
         }
         
-        .item-details {
-            font-size: 0.8125rem;
-            color: var(--gray-600);
+        .item-meta {
+            font-size: 0.875rem;
+            color: var(--text-muted);
             margin-bottom: 1rem;
-            line-height: 1.5;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
         }
         
         .item-controls {
             display: flex;
             align-items: center;
-            justify-content: space-between;
+            gap: 1rem;
         }
         
         .count-controls {
@@ -505,58 +563,64 @@
         .count-btn {
             width: 36px;
             height: 36px;
-            border: 1px solid;
-            border-radius: 6px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            background: var(--bg-secondary);
+            color: var(--text-secondary);
             cursor: pointer;
-            font-size: 1.125rem;
-            font-weight: 600;
-            transition: all 0.2s ease;
             display: flex;
             align-items: center;
             justify-content: center;
-            background: var(--white);
+            font-size: 1.125rem;
+            font-weight: 700;
+            transition: all 0.2s ease;
         }
         
-        .count-btn-minus {
+        .count-btn:hover {
+            transform: scale(1.1);
+        }
+        
+        .count-btn.minus {
             border-color: var(--danger);
             color: var(--danger);
         }
         
-        .count-btn-minus:hover {
+        .count-btn.minus:hover {
             background: var(--danger);
-            color: var(--white);
+            color: white;
         }
         
-        .count-btn-plus {
+        .count-btn.plus {
             border-color: var(--success);
             color: var(--success);
         }
         
-        .count-btn-plus:hover {
+        .count-btn.plus:hover {
             background: var(--success);
-            color: var(--white);
+            color: white;
         }
         
         .count-input {
             width: 70px;
-            padding: 0.5rem 0.75rem;
-            border: 1px solid var(--gray-300);
-            border-radius: 6px;
+            padding: 0.5rem;
+            border: 1px solid var(--border);
+            border-radius: 10px;
             text-align: center;
             font-size: 0.875rem;
             font-weight: 600;
-            background: var(--white);
-            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            transition: all 0.2s ease;
         }
         
         .count-input:focus {
             border-color: var(--accent);
-            outline: none;
             box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+            outline: none;
         }
         
         @media (min-width: 768px) {
-            .item-card {
+            .item {
                 padding: 2rem;
             }
             
@@ -573,75 +637,65 @@
             }
         }
         
+        /* Empty State */
         .empty-state {
             text-align: center;
             padding: 4rem 2rem;
-            color: var(--gray-400);
+            color: var(--text-muted);
         }
         
         .empty-icon {
             font-size: 3rem;
             margin-bottom: 1rem;
+            opacity: 0.5;
         }
         
         .empty-text {
             font-size: 1rem;
             font-weight: 600;
             margin-bottom: 0.5rem;
-            color: var(--gray-500);
+            color: var(--text-secondary);
         }
         
         .empty-subtext {
             font-size: 0.875rem;
-            color: var(--gray-400);
-        }
-        
-        /* Scrollbar Styling */
-        .log::-webkit-scrollbar,
-        .items-list::-webkit-scrollbar {
-            width: 6px;
-        }
-        
-        .log::-webkit-scrollbar-track,
-        .items-list::-webkit-scrollbar-track {
-            background: var(--gray-100);
-            border-radius: 3px;
-        }
-        
-        .log::-webkit-scrollbar-thumb,
-        .items-list::-webkit-scrollbar-thumb {
-            background: var(--gray-300);
-            border-radius: 3px;
-        }
-        
-        .log::-webkit-scrollbar-thumb:hover,
-        .items-list::-webkit-scrollbar-thumb:hover {
-            background: var(--gray-400);
         }
         
         /* Utility Classes */
-        .text-success { color: var(--success); }
-        .text-danger { color: var(--danger); }
-        .text-warning { color: var(--warning); }
+        .success { color: var(--success); }
+        .danger { color: var(--danger); }
+        .muted { color: var(--text-muted); }
         
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
         }
         
-        .item-card {
-            animation: fadeIn 0.3s ease-out;
+        ::-webkit-scrollbar-track {
+            background: var(--bg-secondary);
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 3px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-muted);
         }
     </style>
 </head>
 <body>
-    <header class="app-header">
+    <header class="header">
         <div class="header-content">
-            <div class="app-title">Inked Out Supply Scanner</div>
-            <div class="header-controls">
-                <div class="connection-status">
-                    <div class="status-indicator"></div>
-                    Loyverse Connected
+            <div class="brand">
+                <div class="brand-icon">IS</div>
+                <div class="brand-text">Inked Out Supply Scanner</div>
+            </div>
+            <div class="header-actions">
+                <div class="status-badge">
+                    <div class="status-dot"></div>
+                    <span>Connected</span>
                 </div>
                 <button class="theme-toggle" onclick="toggleTheme()" id="themeToggle" title="Toggle dark mode">
                     🌙
@@ -650,56 +704,63 @@
         </div>
     </header>
 
-    <div class="main-container">
-        <!-- Scanner Panel -->
-        <div class="panel">
-            <div class="panel-header">
-                <h1 class="panel-title">Scanner</h1>
-                <p class="panel-subtitle">Real-time inventory management</p>
+    <div class="container">
+        <!-- Scanner Card -->
+        <div class="card">
+            <div class="card-header">
+                <h1 class="card-title">Scanner</h1>
+                <p class="card-subtitle">Real-time inventory management</p>
             </div>
             
-            <!-- Install Banner -->
-            <div class="install-banner" id="installBanner" onclick="installApp()">
-                <div class="install-banner-text">Install App</div>
-                <div class="install-banner-subtext">Add to home screen for offline access</div>
-            </div>
-            
-            <div class="scanner-section">
-                <input type="text" id="barcodeInput" class="barcode-input" placeholder="Scan or enter SKU (try TESTLOY)..." autofocus>
-                <button class="scan-btn" onclick="performScan()">Scan Product</button>
-            </div>
-            
-            <div class="log" id="logArea">System ready - Connected to Loyverse API<br></div>
-            
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-number" id="totalCount">0</div>
-                    <div class="stat-label">Total Scans</div>
+            <div class="card-content">
+                <!-- Install Banner -->
+                <div class="install-banner" id="installBanner" onclick="installApp()">
+                    <div class="install-banner-text">Install App</div>
+                    <div class="install-banner-subtext">Add to home screen for offline access</div>
                 </div>
-                <div class="stat-card">
-                    <div class="stat-number" id="uniqueCount">0</div>
-                    <div class="stat-label">Unique Items</div>
+                
+                <div class="input-group">
+                    <input type="text" id="barcodeInput" class="input" placeholder="Scan or enter SKU (try TESTLOY)..." autofocus>
                 </div>
-            </div>
-            
-            <div class="action-buttons">
-                <button class="action-btn btn-success" onclick="updateLoyverse()">Update Inventory</button>
-                <button class="action-btn btn-danger" onclick="resetCounts()">Reset All</button>
+                
+                <button class="btn btn-primary" onclick="performScan()">
+                    Scan Product
+                </button>
+                
+                <div class="log" id="logArea">System ready - Connected to Loyverse API<br></div>
+                
+                <div class="stats">
+                    <div class="stat-card">
+                        <div class="stat-number" id="totalCount">0</div>
+                        <div class="stat-label">Total Scans</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="uniqueCount">0</div>
+                        <div class="stat-label">Unique Items</div>
+                    </div>
+                </div>
+                
+                <div class="actions">
+                    <button class="btn btn-success" onclick="updateLoyverse()">Update Inventory</button>
+                    <button class="btn btn-outline" onclick="resetCounts()">Reset All</button>
+                </div>
             </div>
         </div>
         
-        <!-- Items Panel -->
-        <div class="panel">
-            <div class="items-header">
-                <h2 class="items-title">Scanned Items</h2>
-                <p class="items-subtitle">Adjust quantities and review before updating inventory</p>
+        <!-- Items Card -->
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">Scanned Items</h2>
+                <p class="card-subtitle">Adjust quantities and review before updating</p>
             </div>
             
-            <div class="items-list" id="itemsList">
-                <div class="empty-state">
-                    <div class="empty-icon">📦</div>
-                    <div class="empty-text">No items scanned</div>
-                    <div class="empty-subtext">Start scanning to see products appear here</div>
+            <div class="card-content">
+                <div class="items-container" id="itemsList">
+                    <div class="empty-state">
+                        <div class="empty-icon">📦</div>
+                        <div class="empty-text">No items scanned</div>
+                        <div class="empty-subtext">Start scanning to see products appear here</div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -719,7 +780,6 @@
             html.setAttribute('data-theme', newTheme);
             localStorage.setItem('theme', newTheme);
             
-            // Update toggle button icon
             const toggleBtn = document.getElementById('themeToggle');
             toggleBtn.textContent = newTheme === 'dark' ? '☀️' : '🌙';
             toggleBtn.title = `Switch to ${newTheme === 'dark' ? 'light' : 'dark'} mode`;
@@ -740,29 +800,21 @@
                 toggleBtn.title = `Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`;
             }
         }
+        
+        // PWA Install
         window.addEventListener('beforeinstallprompt', (e) => {
-            console.log('Install prompt captured');
             e.preventDefault();
             deferredPrompt = e;
             showInstallBanner();
         });
         
-        // Show install banner
         function showInstallBanner() {
-            console.log('showInstallBanner called');
-            addLog('Checking install banner...');
             const banner = document.getElementById('installBanner');
             if (banner) {
                 banner.style.display = 'block';
-                addLog('Install banner shown');
-                console.log('Install banner displayed');
-            } else {
-                addLog('ERROR: Install banner element not found');
-                console.log('ERROR: Install banner element not found');
             }
         }
         
-        // Hide install banner
         function hideInstallBanner() {
             const banner = document.getElementById('installBanner');
             if (banner) {
@@ -770,17 +822,13 @@
             }
         }
         
-        // Install app function
         function installApp() {
             if (deferredPrompt) {
                 deferredPrompt.prompt();
                 deferredPrompt.userChoice.then((choiceResult) => {
                     if (choiceResult.outcome === 'accepted') {
-                        console.log('User installed the app');
                         addLog('App installed successfully!');
                         hideInstallBanner();
-                    } else {
-                        console.log('User dismissed install');
                     }
                     deferredPrompt = null;
                 });
@@ -793,20 +841,20 @@
             }
         }
         
-        // Check if already installed
         window.addEventListener('appinstalled', () => {
-            console.log('App was installed');
             hideInstallBanner();
             addLog('App installed and ready for offline use!');
         });
         
+        // Logging
         function addLog(message) {
             const log = document.getElementById('logArea');
             const time = new Date().toLocaleTimeString();
-            log.innerHTML += `<span style="color: #9ca3af">${time}:</span> ${message}<br>`;
+            log.innerHTML += `<span class="muted">${time}:</span> ${message}<br>`;
             log.scrollTop = log.scrollHeight;
         }
         
+        // Scanner Functions
         function updateDisplay(barcode, data) {
             totalScans++;
             scannedItems.set(barcode, data);
@@ -835,21 +883,22 @@
             scannedItems.forEach((item, barcode) => {
                 const difference = item.counted - item.currentStock;
                 const diffText = difference > 0 ? `+${difference}` : difference;
-                const diffClass = difference > 0 ? 'text-success' : difference < 0 ? 'text-danger' : '';
+                const diffClass = difference > 0 ? 'success' : difference < 0 ? 'danger' : 'muted';
                 
                 html += `
-                    <div class="item-card">
+                    <div class="item">
                         <div class="item-name">${item.product}</div>
-                        <div class="item-details">
-                            <strong>SKU:</strong> ${barcode} • <strong>Current Stock:</strong> ${item.currentStock} • 
-                            <strong>Difference:</strong> <span class="${diffClass}">${diffText}</span>
+                        <div class="item-meta">
+                            <span><strong>SKU:</strong> ${barcode}</span>
+                            <span><strong>Stock:</strong> ${item.currentStock}</span>
+                            <span><strong>Difference:</strong> <span class="${diffClass}">${diffText}</span></span>
                         </div>
                         <div class="item-controls">
                             <div class="count-controls">
-                                <button class="count-btn count-btn-minus" onclick="adjustCount('${barcode}', -1)">−</button>
+                                <button class="count-btn minus" onclick="adjustCount('${barcode}', -1)">−</button>
                                 <input type="number" class="count-input" value="${item.counted}" 
                                        onchange="setCount('${barcode}', this.value)" min="0">
-                                <button class="count-btn count-btn-plus" onclick="adjustCount('${barcode}', 1)">+</button>
+                                <button class="count-btn plus" onclick="adjustCount('${barcode}', 1)">+</button>
                             </div>
                         </div>
                     </div>
@@ -906,17 +955,17 @@
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    addLog(`✓ Found: ${data.product} (Count: ${data.counted}, Stock: ${data.currentStock})`);
+                    addLog(`<span class="success">✓</span> Found: ${data.product} (Count: ${data.counted}, Stock: ${data.currentStock})`);
                     updateDisplay(barcode, data);
                     input.value = '';
                     input.focus();
                 } else {
-                    addLog(`✗ Error: ${data.error}`);
+                    addLog(`<span class="danger">✗</span> Error: ${data.error}`);
                     input.focus();
                 }
             })
             .catch(error => {
-                addLog(`✗ Connection error: ${error.message}`);
+                addLog(`<span class="danger">✗</span> Connection error: ${error.message}`);
             });
         }
         
@@ -934,13 +983,13 @@
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    addLog(`✓ Success: ${data.message}`);
+                    addLog(`<span class="success">✓</span> Success: ${data.message}`);
                 } else {
-                    addLog(`✗ Update failed: ${data.error}`);
+                    addLog(`<span class="danger">✗</span> Update failed: ${data.error}`);
                 }
             })
             .catch(error => {
-                addLog(`✗ Update error: ${error.message}`);
+                addLog(`<span class="danger">✗</span> Update error: ${error.message}`);
             });
         }
         
@@ -958,7 +1007,7 @@
             }
         }
         
-        // Enter key support
+        // Keyboard Support
         document.getElementById('barcodeInput').addEventListener('keydown', function(e) {
             if (e.key === 'Enter') {
                 performScan();
@@ -967,38 +1016,26 @@
         
         // Initialize
         window.addEventListener('load', function() {
-            // Initialize theme first
             initializeTheme();
-            
             document.getElementById('barcodeInput').focus();
             addLog('Scanner initialized and ready');
             
-            console.log('Page loaded, checking install status...');
-            addLog('Checking installation status...');
-            
             setTimeout(() => {
                 const isStandalone = window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches;
-                console.log('Is standalone:', isStandalone);
                 addLog(`App mode: ${isStandalone ? 'Installed' : 'Browser'}`);
                 
                 if (!isStandalone) {
-                    addLog('Install banner will appear when available');
                     showInstallBanner();
-                } else {
-                    addLog('App is installed - install banner hidden');
                 }
             }, 1000);
             
-            // Register Service Worker
             if ('serviceWorker' in navigator) {
                 navigator.serviceWorker.register('/sw.js')
                     .then((registration) => {
-                        console.log('Service Worker registered:', registration);
-                        addLog('✓ Offline capability enabled');
+                        addLog('<span class="success">✓</span> Offline capability enabled');
                     })
                     .catch((error) => {
-                        console.log('Service Worker registration failed:', error);
-                        addLog('⚠ Offline capability unavailable');
+                        addLog('<span class="warning">⚠</span> Offline capability unavailable');
                     });
             }
         });
