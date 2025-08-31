@@ -441,6 +441,7 @@
         // Install app function
         function installApp() {
             if (deferredPrompt) {
+                // Native install available
                 deferredPrompt.prompt();
                 deferredPrompt.userChoice.then((choiceResult) => {
                     if (choiceResult.outcome === 'accepted') {
@@ -452,6 +453,13 @@
                     }
                     deferredPrompt = null;
                 });
+            } else {
+                // Fallback instructions
+                if (/iPhone|iPad|iPod/.test(navigator.userAgent)) {
+                    addLog('To install: Tap Share button → Add to Home Screen');
+                } else {
+                    addLog('To install: Look for install option in browser menu');
+                }
             }
         }
         
@@ -630,6 +638,13 @@
         window.addEventListener('load', function() {
             document.getElementById('barcodeInput').focus();
             addLog('Loyverse inventory scanner ready');
+            
+            // Show install banner by default if not already installed
+            setTimeout(() => {
+                if (!window.navigator.standalone && !window.matchMedia('(display-mode: standalone)').matches) {
+                    showInstallBanner();
+                }
+            }, 1000);
             
             // Register Service Worker
             if ('serviceWorker' in navigator) {
