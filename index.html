@@ -424,9 +424,16 @@
         
         // Show install banner
         function showInstallBanner() {
+            console.log('showInstallBanner called');
+            addLog('Checking install banner...');
             const banner = document.getElementById('installBanner');
             if (banner) {
                 banner.style.display = 'block';
+                addLog('Install banner shown');
+                console.log('Install banner displayed');
+            } else {
+                addLog('ERROR: Install banner element not found');
+                console.log('ERROR: Install banner element not found');
             }
         }
         
@@ -639,10 +646,20 @@
             document.getElementById('barcodeInput').focus();
             addLog('Loyverse inventory scanner ready');
             
+            console.log('Page loaded, checking install status...');
+            addLog('DEBUG: Checking if app is already installed...');
+            
             // Show install banner by default if not already installed
             setTimeout(() => {
-                if (!window.navigator.standalone && !window.matchMedia('(display-mode: standalone)').matches) {
+                const isStandalone = window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches;
+                console.log('Is standalone:', isStandalone);
+                addLog(`DEBUG: Standalone mode: ${isStandalone}`);
+                
+                if (!isStandalone) {
+                    addLog('DEBUG: Not installed, showing banner...');
                     showInstallBanner();
+                } else {
+                    addLog('DEBUG: Already installed, hiding banner');
                 }
             }, 1000);
             
@@ -655,6 +672,7 @@
                     })
                     .catch((error) => {
                         console.log('Service Worker registration failed:', error);
+                        addLog('Service Worker failed: ' + error.message);
                     });
             }
         });
