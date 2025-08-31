@@ -547,6 +547,18 @@
         window.addEventListener('load', function() {
             document.getElementById('barcodeInput').focus();
             addLog('Loyverse inventory scanner ready');
+            
+            // Register Service Worker
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('/sw.js')
+                    .then((registration) => {
+                        console.log('Service Worker registered:', registration);
+                        addLog('App ready for offline use');
+                    })
+                    .catch((error) => {
+                        console.log('Service Worker registration failed:', error);
+                    });
+            }
         });
     </script>
 </body>
