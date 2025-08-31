@@ -173,6 +173,173 @@
             transform: scale(1.05);
         }
         
+        /* Employee Info */
+        .employee-info {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: var(--bg-secondary);
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            border: 1px solid var(--border);
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+        
+        .employee-name {
+            color: var(--text-primary);
+        }
+        
+        .employee-logout {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 0.25rem;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+            font-size: 0.875rem;
+        }
+        
+        .employee-logout:hover {
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
+        }
+        
+        /* Sign-in Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            backdrop-filter: blur(4px);
+        }
+        
+        .modal {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: var(--shadow-lg);
+            max-width: 400px;
+            width: 90%;
+            animation: modalSlideIn 0.3s ease;
+        }
+        
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .modal-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+        
+        .modal-subtitle {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        
+        /* Session Management */
+        .session-actions {
+            display: flex;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
+        
+        .session-btn {
+            flex: 1;
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            background: var(--bg-primary);
+            color: var(--text-secondary);
+            font-size: 0.8125rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: center;
+        }
+        
+        .session-btn:hover {
+            background: var(--bg-tertiary);
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+        
+        .session-btn.primary {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+        }
+        
+        .session-btn.primary:hover {
+            background: var(--accent-light);
+        }
+        
+        .session-list {
+            max-height: 200px;
+            overflow-y: auto;
+            margin: 1rem 0;
+        }
+        
+        .session-item {
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .session-item:hover {
+            border-color: var(--accent);
+            background: var(--bg-tertiary);
+        }
+        
+        .session-item-header {
+            display: flex;
+            justify-content: between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+        
+        .session-date {
+            font-weight: 600;
+            color: var(--text-primary);
+            font-size: 0.875rem;
+        }
+        
+        .session-employee {
+            color: var(--text-muted);
+            font-size: 0.75rem;
+        }
+        
+        .session-stats {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+        
         /* Responsive Layout System */
         
         /* Mobile Portrait (320px - 479px) */
@@ -971,6 +1138,10 @@
                 <div class="brand-text">Inked Out Supply Scanner</div>
             </div>
             <div class="header-actions">
+                <div class="employee-info" id="employeeInfo" style="display: none;">
+                    <span class="employee-name" id="employeeName"></span>
+                    <button class="employee-logout" onclick="signOut()" title="Sign out">↗</button>
+                </div>
                 <div class="status-badge">
                     <div class="status-dot"></div>
                     <span>Connected</span>
@@ -1044,12 +1215,236 @@
         </div>
     </div>
     
+    <!-- Sign-in Modal -->
+    <div class="modal-overlay" id="signInModal">
+        <div class="modal">
+            <h2 class="modal-title">Employee Sign In</h2>
+            <p class="modal-subtitle">Enter your name to start or continue counting</p>
+            
+            <div class="input-group">
+                <input type="text" id="employeeNameInput" class="input" placeholder="Enter your name..." autofocus>
+            </div>
+            
+            <div class="session-actions">
+                <button class="session-btn primary" onclick="startNewSession()">Start New Count</button>
+                <button class="session-btn" onclick="showPreviousSessions()">Continue Previous</button>
+            </div>
+            
+            <div id="sessionsList" class="session-list" style="display: none;"></div>
+        </div>
+    </div>
+    
     <script>
         let totalScans = 0;
         let scannedItems = new Map();
         let deferredPrompt = null;
+        let currentEmployee = null;
+        let currentSession = null;
         
-        // Offline Data Persistence
+        // Employee & Session Management
+        function showSignInModal() {
+            document.getElementById('signInModal').style.display = 'flex';
+            document.getElementById('employeeNameInput').focus();
+        }
+        
+        function hideSignInModal() {
+            document.getElementById('signInModal').style.display = 'none';
+        }
+        
+        function startNewSession() {
+            const nameInput = document.getElementById('employeeNameInput');
+            const employeeName = nameInput.value.trim();
+            
+            if (!employeeName) {
+                alert('Please enter your name');
+                return;
+            }
+            
+            // Create new session
+            currentEmployee = employeeName;
+            currentSession = {
+                id: Date.now().toString(),
+                employee: employeeName,
+                startTime: new Date().toISOString(),
+                scannedItems: new Map(),
+                totalScans: 0
+            };
+            
+            // Clear current data
+            scannedItems.clear();
+            totalScans = 0;
+            updateUI();
+            
+            // Update header
+            updateEmployeeDisplay();
+            hideSignInModal();
+            
+            addLog(`New session started by ${employeeName}`);
+            saveSessionData();
+        }
+        
+        function showPreviousSessions() {
+            const nameInput = document.getElementById('employeeNameInput');
+            const employeeName = nameInput.value.trim();
+            
+            if (!employeeName) {
+                alert('Please enter your name to see your previous sessions');
+                return;
+            }
+            
+            const sessions = getPreviousSessions(employeeName);
+            const sessionsList = document.getElementById('sessionsList');
+            
+            if (sessions.length === 0) {
+                sessionsList.innerHTML = '<p style="text-align: center; color: var(--text-muted); padding: 2rem;">No previous sessions found</p>';
+            } else {
+                let html = '<h3 style="margin-bottom: 1rem; color: var(--text-primary);">Your Previous Sessions:</h3>';
+                sessions.forEach(session => {
+                    const date = new Date(session.startTime).toLocaleDateString();
+                    const time = new Date(session.startTime).toLocaleTimeString();
+                    html += `
+                        <div class="session-item" onclick="loadSession('${session.id}')">
+                            <div class="session-item-header">
+                                <div class="session-date">${date} at ${time}</div>
+                            </div>
+                            <div class="session-stats">
+                                ${session.totalScans} total scans • ${session.uniqueItems || 0} unique items
+                            </div>
+                        </div>
+                    `;
+                });
+                sessionsList.innerHTML = html;
+            }
+            
+            sessionsList.style.display = 'block';
+        }
+        
+        function loadSession(sessionId) {
+            const sessions = getAllSessions();
+            const session = sessions.find(s => s.id === sessionId);
+            
+            if (session) {
+                currentEmployee = session.employee;
+                currentSession = session;
+                scannedItems = new Map(session.scannedItems);
+                totalScans = session.totalScans;
+                
+                updateUI();
+                updateEmployeeDisplay();
+                hideSignInModal();
+                
+                const date = new Date(session.startTime).toLocaleString();
+                addLog(`Restored session from ${date}`);
+            }
+        }
+        
+        function signOut() {
+            if (totalScans > 0) {
+                if (!confirm('You have unsaved scan data. Are you sure you want to sign out?')) {
+                    return;
+                }
+            }
+            
+            saveSessionData(); // Save before signing out
+            currentEmployee = null;
+            currentSession = null;
+            scannedItems.clear();
+            totalScans = 0;
+            updateUI();
+            updateEmployeeDisplay();
+            showSignInModal();
+            addLog('Signed out');
+        }
+        
+        function updateEmployeeDisplay() {
+            const employeeInfo = document.getElementById('employeeInfo');
+            const employeeName = document.getElementById('employeeName');
+            
+            if (currentEmployee) {
+                employeeName.textContent = currentEmployee;
+                employeeInfo.style.display = 'flex';
+            } else {
+                employeeInfo.style.display = 'none';
+            }
+        }
+        
+        function updateUI() {
+            document.getElementById('totalCount').textContent = totalScans;
+            document.getElementById('uniqueCount').textContent = scannedItems.size;
+            renderItemsList();
+        }
+        
+        // Session Data Storage
+        function saveSessionData() {
+            if (!currentEmployee || !currentSession) return;
+            
+            try {
+                // Update current session
+                currentSession.scannedItems = Array.from(scannedItems.entries());
+                currentSession.totalScans = totalScans;
+                currentSession.uniqueItems = scannedItems.size;
+                currentSession.lastUpdated = new Date().toISOString();
+                
+                // Get all sessions
+                const allSessions = getAllSessions();
+                
+                // Update or add current session
+                const existingIndex = allSessions.findIndex(s => s.id === currentSession.id);
+                if (existingIndex >= 0) {
+                    allSessions[existingIndex] = currentSession;
+                } else {
+                    allSessions.push(currentSession);
+                }
+                
+                // Keep only last 20 sessions per employee
+                const employeeSessions = allSessions
+                    .filter(s => s.employee === currentEmployee)
+                    .sort((a, b) => new Date(b.startTime) - new Date(a.startTime))
+                    .slice(0, 20);
+                
+                const otherSessions = allSessions.filter(s => s.employee !== currentEmployee);
+                const finalSessions = [...employeeSessions, ...otherSessions];
+                
+                localStorage.setItem('scannerSessions', JSON.stringify(finalSessions));
+            } catch (error) {
+                console.error('Failed to save session data:', error);
+            }
+        }
+        
+        function getAllSessions() {
+            try {
+                const saved = localStorage.getItem('scannerSessions');
+                return saved ? JSON.parse(saved) : [];
+            } catch (error) {
+                console.error('Failed to load sessions:', error);
+                return [];
+            }
+        }
+        
+        function getPreviousSessions(employeeName) {
+            return getAllSessions()
+                .filter(s => s.employee === employeeName)
+                .sort((a, b) => new Date(b.startTime) - new Date(a.startTime));
+        }
+        
+        // Legacy localStorage functions (updated)
+        function saveToLocalStorage() {
+            saveSessionData();
+        }
+        
+        function loadFromLocalStorage() {
+            // Don't auto-load - require employee sign in
+            return;
+        }
+        
+        function clearLocalStorage() {
+            if (currentSession) {
+                const allSessions = getAllSessions();
+                const updatedSessions = allSessions.filter(s => s.id !== currentSession.id);
+                localStorage.setItem('scannerSessions', JSON.stringify(updatedSessions));
+                addLog('Current session cleared');
+            }
+        }
         function saveToLocalStorage() {
             try {
                 const data = {
@@ -1335,18 +1730,28 @@
         }
         
         // Keyboard Support
-        document.getElementById('barcodeInput').addEventListener('keydown', function(e) {
+        document.addEventListener('keydown', function(e) {
             if (e.key === 'Enter') {
-                performScan();
+                const signInModal = document.getElementById('signInModal');
+                const nameInput = document.getElementById('employeeNameInput');
+                const barcodeInput = document.getElementById('barcodeInput');
+                
+                if (signInModal.style.display === 'flex' && nameInput === document.activeElement) {
+                    startNewSession();
+                } else if (barcodeInput === document.activeElement) {
+                    performScan();
+                }
             }
         });
         
         // Initialize
         window.addEventListener('load', function() {
             initializeTheme();
-            loadFromLocalStorage(); // Restore previous session data
-            document.getElementById('barcodeInput').focus();
-            addLog('Scanner initialized and ready');
+            
+            // Show sign-in modal instead of loading data
+            showSignInModal();
+            
+            addLog('Scanner initialized - Please sign in to continue');
             
             setTimeout(() => {
                 const isStandalone = window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches;
