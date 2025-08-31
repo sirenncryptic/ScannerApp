@@ -17,6 +17,18 @@ const scannedItems = new Map();
 app.use(express.json());
 app.use(express.static('public'));
 
+// Serve service worker from root
+app.get('/sw.js', (req, res) => {
+    res.set('Content-Type', 'application/javascript');
+    res.sendFile(path.join(__dirname, 'sw.js'));
+});
+
+// Serve manifest from root  
+app.get('/manifest.json', (req, res) => {
+    res.set('Content-Type', 'application/json');
+    res.sendFile(path.join(__dirname, 'manifest.json'));
+});
+
 // Add detailed logging function
 function logError(context, error, additionalInfo = {}) {
     console.log('\n=== ERROR LOG ===');
