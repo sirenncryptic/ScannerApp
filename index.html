@@ -58,6 +58,34 @@
             margin-bottom: 30px;
         }
         
+        .install-banner {
+            background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: none;
+        }
+        
+        .install-banner:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+        }
+        
+        .install-banner-text {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        
+        .install-banner-subtext {
+            font-size: 12px;
+            opacity: 0.9;
+        }
+        
         .title h1 {
             color: #667eea;
             font-size: 2.5em;
@@ -334,6 +362,12 @@
                 <div class="subtitle">LOYVERSE CONNECTED - Real inventory data</div>
             </div>
             
+            <!-- Install Banner -->
+            <div class="install-banner" id="installBanner" onclick="installApp()">
+                <div class="install-banner-text">📱 Install Scanner App</div>
+                <div class="install-banner-subtext">Add to home screen for faster access & offline use</div>
+            </div>
+            
             <div class="scanner-section">
                 <input type="text" id="barcodeInput" class="barcode-input" placeholder="Scan barcode (TESTLOY)..." autofocus>
                 <button class="scan-btn" onclick="performScan()">SCAN NOW</button>
@@ -378,6 +412,55 @@
     <script>
         let totalScans = 0;
         let scannedItems = new Map();
+        let deferredPrompt = null;
+        
+        // Capture the install prompt
+        window.addEventListener('beforeinstallprompt', (e) => {
+            console.log('Install prompt captured');
+            e.preventDefault();
+            deferredPrompt = e;
+            showInstallBanner();
+        });
+        
+        // Show install banner
+        function showInstallBanner() {
+            const banner = document.getElementById('installBanner');
+            if (banner) {
+                banner.style.display = 'block';
+            }
+        }
+        
+        // Hide install banner
+        function hideInstallBanner() {
+            const banner = document.getElementById('installBanner');
+            if (banner) {
+                banner.style.display = 'none';
+            }
+        }
+        
+        // Install app function
+        function installApp() {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                deferredPrompt.userChoice.then((choiceResult) => {
+                    if (choiceResult.outcome === 'accepted') {
+                        console.log('User installed the app');
+                        addLog('App installed successfully!');
+                        hideInstallBanner();
+                    } else {
+                        console.log('User dismissed install');
+                    }
+                    deferredPrompt = null;
+                });
+            }
+        }
+        
+        // Check if already installed
+        window.addEventListener('appinstalled', () => {
+            console.log('App was installed');
+            hideInstallBanner();
+            addLog('App installed and ready for offline use!');
+        });
         
         function addLog(message) {
             const log = document.getElementById('logArea');
