@@ -3,16 +3,66 @@
 <head>
     <title>Inked Out Supply Scanner</title>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
     
     <!-- PWA Manifest -->
     <link rel="manifest" href="/manifest.json">
-    <meta name="theme-color" content="#667eea">
+    <meta name="theme-color" content="#1f2937">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="Scanner">
     
     <style>
+        :root {
+            --primary: #1f2937;
+            --primary-light: #374151;
+            --accent: #3b82f6;
+            --success: #059669;
+            --danger: #dc2626;
+            --warning: #d97706;
+            --gray-50: #f9fafb;
+            --gray-100: #f3f4f6;
+            --gray-200: #e5e7eb;
+            --gray-300: #d1d5db;
+            --gray-400: #9ca3af;
+            --gray-500: #6b7280;
+            --gray-600: #4b5563;
+            --gray-700: #374151;
+            --gray-800: #1f2937;
+            --gray-900: #111827;
+            --white: #ffffff;
+            
+            /* Light mode (default) */
+            --bg-primary: var(--gray-50);
+            --bg-secondary: var(--white);
+            --text-primary: var(--gray-900);
+            --text-secondary: var(--gray-700);
+            --text-muted: var(--gray-500);
+            --border-color: var(--gray-200);
+            --border-hover: var(--gray-300);
+            --input-bg: var(--white);
+            --log-bg: var(--gray-50);
+        }
+        
+        [data-theme="dark"] {
+            --bg-primary: #0d1117;
+            --bg-secondary: #21262d;
+            --text-primary: #f0f6fc;
+            --text-secondary: #c9d1d9;
+            --text-muted: #8b949e;
+            --border-color: #30363d;
+            --border-hover: #484f58;
+            --input-bg: #21262d;
+            --log-bg: #161b22;
+            --gray-50: #21262d;
+            --gray-100: #30363d;
+            --success: #238636;
+            --danger: #f85149;
+            --accent: #58a6ff;
+            --primary: #21262d;
+            --primary-light: #30363d;
+        }
+        
         * {
             margin: 0;
             padding: 0;
@@ -20,362 +70,608 @@
         }
         
         body { 
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; 
+            background-color: var(--bg-primary);
             min-height: 100vh;
-            padding: 20px;
+            line-height: 1.6;
+            color: var(--text-secondary);
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            transition: background-color 0.3s ease, color 0.3s ease;
         }
         
-        .container {
-            max-width: 1400px;
+        .app-header {
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-color);
+            padding: 1.5rem 2rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+            transition: background-color 0.3s ease, border-color 0.3s ease;
+        }
+        
+        .header-content {
+            max-width: 1600px;
             margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .app-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            letter-spacing: -0.025em;
+        }
+        
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+        }
+        
+        .connection-status {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--text-muted);
+        }
+        
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--success);
+        }
+        
+        .theme-toggle {
+            background: var(--input-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 0.5rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            color: var(--text-secondary);
+            font-size: 1.125rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+        }
+        
+        .theme-toggle:hover {
+            background: var(--log-bg);
+            border-color: var(--border-hover);
+        }
+        
+        .main-container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 2rem;
             display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 30px;
-            height: calc(100vh - 40px);
+            gap: 2rem;
+            min-height: calc(100vh - 80px);
         }
         
-        .scanner-panel {
-            background: white;
-            border-radius: 20px;
-            padding: 30px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-            display: flex;
-            flex-direction: column;
+        /* Mobile First - Single Column */
+        .main-container {
+            grid-template-columns: 1fr;
         }
         
-        .items-panel {
-            background: white;
-            border-radius: 20px;
-            padding: 30px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-            display: flex;
-            flex-direction: column;
+        /* Tablet Portrait */
+        @media (min-width: 768px) {
+            .main-container {
+                padding: 2.5rem;
+                gap: 2.5rem;
+            }
         }
         
-        .title {
-            text-align: center;
-            margin-bottom: 30px;
+        /* Tablet Landscape & Desktop */
+        @media (min-width: 1024px) {
+            .main-container {
+                grid-template-columns: 1fr 1fr;
+                gap: 3rem;
+            }
         }
         
-        .install-banner {
-            background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
-            color: white;
-            padding: 12px 20px;
+        /* Large Desktop */
+        @media (min-width: 1400px) {
+            .main-container {
+                gap: 4rem;
+            }
+        }
+        
+        .panel {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
             border-radius: 12px;
-            margin-bottom: 20px;
+            padding: 2rem;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            transition: background-color 0.3s ease, border-color 0.3s ease;
+        }
+        
+        @media (min-width: 768px) {
+            .panel {
+                padding: 2.5rem;
+            }
+        }
+        
+        .panel-header {
+            margin-bottom: 2rem;
+        }
+        
+        .panel-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.025em;
+        }
+        
+        .panel-subtitle {
+            color: var(--text-muted);
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+        
+        /* Install Banner */
+        .install-banner {
+            background: var(--accent);
+            color: var(--white);
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            margin-bottom: 2rem;
             text-align: center;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: background-color 0.2s ease;
             display: none;
         }
         
         .install-banner:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+            background: #2563eb;
         }
         
         .install-banner-text {
-            font-size: 14px;
+            font-size: 0.875rem;
             font-weight: 600;
-            margin-bottom: 5px;
+            margin-bottom: 0.25rem;
         }
         
         .install-banner-subtext {
-            font-size: 12px;
+            font-size: 0.75rem;
             opacity: 0.9;
         }
         
-        .title h1 {
-            color: #667eea;
-            font-size: 2.5em;
-            font-weight: 700;
-            margin-bottom: 10px;
-        }
-        
-        .title .subtitle {
-            color: #64b5f6;
-            font-size: 1.1em;
-            font-weight: 500;
-        }
-        
+        /* Scanner Section */
         .scanner-section {
             flex: 0 0 auto;
-            margin-bottom: 30px;
+            margin-bottom: 2rem;
         }
         
         .barcode-input {
             width: 100%;
-            padding: 20px;
-            font-size: 20px;
-            border: 3px solid #e3f2fd;
-            border-radius: 15px;
-            margin-bottom: 20px;
-            transition: all 0.3s ease;
+            padding: 1rem 1.25rem;
+            font-size: 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            transition: all 0.2s ease;
             outline: none;
+            background: var(--input-bg);
+            color: var(--text-secondary);
+            font-weight: 500;
         }
         
         .barcode-input:focus {
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        
+        @media (min-width: 768px) {
+            .barcode-input {
+                padding: 1.25rem 1.5rem;
+                font-size: 1.125rem;
+            }
         }
         
         .scan-btn {
             width: 100%;
-            padding: 18px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
+            padding: 1rem 1.5rem;
+            background: var(--primary);
+            color: var(--white);
             border: none;
-            font-size: 18px;
+            font-size: 0.875rem;
             font-weight: 600;
-            border-radius: 12px;
+            border-radius: 8px;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: background-color 0.2s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
         }
         
         .scan-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+            background: var(--primary-light);
         }
         
+        .scan-btn:active {
+            transform: translateY(1px);
+        }
+        
+        @media (min-width: 768px) {
+            .scan-btn {
+                padding: 1.25rem 2rem;
+                font-size: 1rem;
+            }
+        }
+        
+        /* Activity Log */
         .log {
-            background: #f8f9fa;
-            padding: 20px;
-            border-radius: 12px;
-            margin-bottom: 20px;
+            background: var(--log-bg);
+            border: 1px solid var(--border-color);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin-bottom: 2rem;
             height: 200px;
             overflow-y: auto;
-            font-family: 'Courier New', monospace;
-            font-size: 12px;
-            border: 1px solid #e9ecef;
+            font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+            font-size: 0.8125rem;
+            line-height: 1.5;
             flex: 1;
+            color: var(--text-secondary);
+            transition: all 0.3s ease;
         }
         
-        .stats-row {
+        @media (min-width: 768px) {
+            .log {
+                height: 250px;
+                font-size: 0.875rem;
+            }
+        }
+        
+        /* Stats Cards */
+        .stats-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            margin-bottom: 20px;
+            gap: 1rem;
+            margin-bottom: 2rem;
         }
         
         .stat-card {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 20px;
-            border-radius: 12px;
+            background: var(--white);
+            border: 1px solid var(--gray-200);
+            padding: 1.5rem;
+            border-radius: 8px;
             text-align: center;
         }
         
         .stat-number {
-            font-size: 2em;
+            font-size: 2rem;
             font-weight: 700;
-            margin-bottom: 5px;
+            margin-bottom: 0.25rem;
+            color: var(--gray-900);
+            letter-spacing: -0.025em;
         }
         
         .stat-label {
-            font-size: 0.9em;
-            opacity: 0.9;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--gray-500);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
         }
         
-        .btn-row {
+        @media (min-width: 768px) {
+            .stats-grid {
+                gap: 1.5rem;
+            }
+            
+            .stat-card {
+                padding: 2rem;
+            }
+            
+            .stat-number {
+                font-size: 2.5rem;
+            }
+            
+            .stat-label {
+                font-size: 0.875rem;
+            }
+        }
+        
+        /* Action Buttons */
+        .action-buttons {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 15px;
+            gap: 1rem;
         }
         
-        .btn-half {
-            padding: 15px;
-            border: none;
-            border-radius: 10px;
+        .action-btn {
+            padding: 0.875rem 1.25rem;
+            border: 1px solid;
+            border-radius: 8px;
             cursor: pointer;
-            font-size: 14px;
+            font-size: 0.75rem;
             font-weight: 600;
-            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            transition: all 0.2s ease;
         }
         
-        .btn-loyverse {
-            background: #4caf50;
-            color: white;
+        .btn-success {
+            background: var(--success);
+            border-color: var(--success);
+            color: var(--white);
         }
         
-        .btn-loyverse:hover {
-            background: #45a049;
-            transform: translateY(-1px);
+        .btn-success:hover {
+            background: #047857;
+            border-color: #047857;
         }
         
-        .btn-reset {
-            background: #f44336;
-            color: white;
+        .btn-danger {
+            background: var(--white);
+            border-color: var(--danger);
+            color: var(--danger);
         }
         
-        .btn-reset:hover {
-            background: #da190b;
-            transform: translateY(-1px);
+        .btn-danger:hover {
+            background: var(--danger);
+            color: var(--white);
         }
         
+        @media (min-width: 768px) {
+            .action-buttons {
+                gap: 1.5rem;
+            }
+            
+            .action-btn {
+                padding: 1rem 1.5rem;
+                font-size: 0.875rem;
+            }
+        }
+        
+        /* Items Panel */
         .items-header {
-            margin-bottom: 20px;
-            border-bottom: 2px solid #f0f0f0;
-            padding-bottom: 15px;
+            margin-bottom: 2rem;
+            border-bottom: 1px solid var(--gray-200);
+            padding-bottom: 1rem;
         }
         
-        .items-header h2 {
-            color: #333;
-            font-size: 1.5em;
-            margin-bottom: 5px;
+        .items-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--gray-900);
+            margin-bottom: 0.5rem;
         }
         
-        .items-header .subtitle {
-            color: #666;
-            font-size: 0.9em;
+        .items-subtitle {
+            color: var(--gray-500);
+            font-size: 0.875rem;
+            font-weight: 400;
         }
         
         .items-list {
             flex: 1;
             overflow-y: auto;
-            padding-right: 10px;
         }
         
-        .item-row {
-            background: #f8f9fa;
-            border: 1px solid #e9ecef;
-            border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 15px;
-            transition: all 0.3s ease;
+        .item-card {
+            background: var(--white);
+            border: 1px solid var(--gray-200);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
         }
         
-        .item-row:hover {
-            background: #e3f2fd;
-            border-color: #667eea;
+        .item-card:hover {
+            border-color: var(--gray-300);
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
         }
         
         .item-name {
-            font-size: 1.1em;
+            font-size: 1rem;
             font-weight: 600;
-            color: #333;
-            margin-bottom: 8px;
+            color: var(--gray-900);
+            margin-bottom: 0.5rem;
         }
         
         .item-details {
-            font-size: 0.9em;
-            color: #666;
-            margin-bottom: 15px;
+            font-size: 0.8125rem;
+            color: var(--gray-600);
+            margin-bottom: 1rem;
+            line-height: 1.5;
         }
         
         .item-controls {
             display: flex;
             align-items: center;
-            gap: 15px;
+            justify-content: space-between;
         }
         
-        .count-display {
-            font-size: 1.2em;
-            font-weight: 600;
-            color: #667eea;
-            min-width: 40px;
-            text-align: center;
+        .count-controls {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
         }
         
         .count-btn {
-            width: 35px;
-            height: 35px;
-            border: none;
-            border-radius: 8px;
+            width: 36px;
+            height: 36px;
+            border: 1px solid;
+            border-radius: 6px;
             cursor: pointer;
-            font-size: 16px;
+            font-size: 1.125rem;
             font-weight: 600;
             transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--white);
         }
         
         .count-btn-minus {
-            background: #ffebee;
-            color: #f44336;
+            border-color: var(--danger);
+            color: var(--danger);
         }
         
         .count-btn-minus:hover {
-            background: #f44336;
-            color: white;
+            background: var(--danger);
+            color: var(--white);
         }
         
         .count-btn-plus {
-            background: #e8f5e8;
-            color: #4caf50;
+            border-color: var(--success);
+            color: var(--success);
         }
         
         .count-btn-plus:hover {
-            background: #4caf50;
-            color: white;
+            background: var(--success);
+            color: var(--white);
         }
         
         .count-input {
-            width: 60px;
-            padding: 8px;
-            border: 2px solid #e9ecef;
+            width: 70px;
+            padding: 0.5rem 0.75rem;
+            border: 1px solid var(--gray-300);
             border-radius: 6px;
             text-align: center;
-            font-size: 1em;
+            font-size: 0.875rem;
             font-weight: 600;
+            background: var(--white);
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
         }
         
         .count-input:focus {
-            border-color: #667eea;
+            border-color: var(--accent);
             outline: none;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        
+        @media (min-width: 768px) {
+            .item-card {
+                padding: 2rem;
+            }
+            
+            .count-btn {
+                width: 44px;
+                height: 44px;
+                font-size: 1.25rem;
+            }
+            
+            .count-input {
+                width: 80px;
+                padding: 0.75rem;
+                font-size: 1rem;
+            }
         }
         
         .empty-state {
             text-align: center;
-            padding: 60px 20px;
-            color: #999;
+            padding: 4rem 2rem;
+            color: var(--gray-400);
         }
         
-        .empty-state-icon {
-            font-size: 4em;
-            margin-bottom: 20px;
+        .empty-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
         }
         
-        .empty-state-text {
-            font-size: 1.1em;
-            margin-bottom: 10px;
+        .empty-text {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--gray-500);
         }
         
-        .empty-state-subtext {
-            font-size: 0.9em;
-            opacity: 0.7;
+        .empty-subtext {
+            font-size: 0.875rem;
+            color: var(--gray-400);
         }
         
-        /* Responsive design */
-        @media (max-width: 1024px) {
-            .container {
-                grid-template-columns: 1fr;
-                height: auto;
-            }
+        /* Scrollbar Styling */
+        .log::-webkit-scrollbar,
+        .items-list::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .log::-webkit-scrollbar-track,
+        .items-list::-webkit-scrollbar-track {
+            background: var(--gray-100);
+            border-radius: 3px;
+        }
+        
+        .log::-webkit-scrollbar-thumb,
+        .items-list::-webkit-scrollbar-thumb {
+            background: var(--gray-300);
+            border-radius: 3px;
+        }
+        
+        .log::-webkit-scrollbar-thumb:hover,
+        .items-list::-webkit-scrollbar-thumb:hover {
+            background: var(--gray-400);
+        }
+        
+        /* Utility Classes */
+        .text-success { color: var(--success); }
+        .text-danger { color: var(--danger); }
+        .text-warning { color: var(--warning); }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .item-card {
+            animation: fadeIn 0.3s ease-out;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <!-- Left Panel - Scanner -->
-        <div class="scanner-panel">
-            <div class="title">
-                <h1>Scanner</h1>
-                <div class="subtitle">LOYVERSE CONNECTED - Real inventory data</div>
+    <header class="app-header">
+        <div class="header-content">
+            <div class="app-title">Inked Out Supply Scanner</div>
+            <div class="header-controls">
+                <div class="connection-status">
+                    <div class="status-indicator"></div>
+                    Loyverse Connected
+                </div>
+                <button class="theme-toggle" onclick="toggleTheme()" id="themeToggle" title="Toggle dark mode">
+                    🌙
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <div class="main-container">
+        <!-- Scanner Panel -->
+        <div class="panel">
+            <div class="panel-header">
+                <h1 class="panel-title">Scanner</h1>
+                <p class="panel-subtitle">Real-time inventory management</p>
             </div>
             
             <!-- Install Banner -->
             <div class="install-banner" id="installBanner" onclick="installApp()">
-                <div class="install-banner-text">📱 Install Scanner App</div>
-                <div class="install-banner-subtext">Add to home screen for faster access & offline use</div>
+                <div class="install-banner-text">Install App</div>
+                <div class="install-banner-subtext">Add to home screen for offline access</div>
             </div>
             
             <div class="scanner-section">
-                <input type="text" id="barcodeInput" class="barcode-input" placeholder="Scan barcode (TESTLOY)..." autofocus>
-                <button class="scan-btn" onclick="performScan()">SCAN NOW</button>
+                <input type="text" id="barcodeInput" class="barcode-input" placeholder="Scan or enter SKU (try TESTLOY)..." autofocus>
+                <button class="scan-btn" onclick="performScan()">Scan Product</button>
             </div>
             
-            <div class="log" id="logArea">Scanner ready - Loyverse API connected<br></div>
+            <div class="log" id="logArea">System ready - Connected to Loyverse API<br></div>
             
-            <div class="stats-row">
+            <div class="stats-grid">
                 <div class="stat-card">
                     <div class="stat-number" id="totalCount">0</div>
                     <div class="stat-label">Total Scans</div>
@@ -386,24 +682,24 @@
                 </div>
             </div>
             
-            <div class="btn-row">
-                <button class="btn-half btn-loyverse" onclick="updateLoyverse()">UPDATE LOYVERSE</button>
-                <button class="btn-half btn-reset" onclick="resetCounts()">RESET COUNTS</button>
+            <div class="action-buttons">
+                <button class="action-btn btn-success" onclick="updateLoyverse()">Update Inventory</button>
+                <button class="action-btn btn-danger" onclick="resetCounts()">Reset All</button>
             </div>
         </div>
         
-        <!-- Right Panel - Items List -->
-        <div class="items-panel">
+        <!-- Items Panel -->
+        <div class="panel">
             <div class="items-header">
-                <h2>Scanned Items</h2>
-                <div class="subtitle">Click +/- to adjust counts or type directly</div>
+                <h2 class="items-title">Scanned Items</h2>
+                <p class="items-subtitle">Adjust quantities and review before updating inventory</p>
             </div>
             
             <div class="items-list" id="itemsList">
                 <div class="empty-state">
-                    <div class="empty-state-icon">📱</div>
-                    <div class="empty-state-text">No items scanned yet</div>
-                    <div class="empty-state-subtext">Start scanning to see items appear here</div>
+                    <div class="empty-icon">📦</div>
+                    <div class="empty-text">No items scanned</div>
+                    <div class="empty-subtext">Start scanning to see products appear here</div>
                 </div>
             </div>
         </div>
@@ -414,7 +710,36 @@
         let scannedItems = new Map();
         let deferredPrompt = null;
         
-        // Capture the install prompt
+        // Theme Management
+        function toggleTheme() {
+            const html = document.documentElement;
+            const currentTheme = html.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            
+            html.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            
+            // Update toggle button icon
+            const toggleBtn = document.getElementById('themeToggle');
+            toggleBtn.textContent = newTheme === 'dark' ? '☀️' : '🌙';
+            toggleBtn.title = `Switch to ${newTheme === 'dark' ? 'light' : 'dark'} mode`;
+            
+            addLog(`Switched to ${newTheme} mode`);
+        }
+        
+        function initializeTheme() {
+            const savedTheme = localStorage.getItem('theme');
+            const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            const theme = savedTheme || (systemPrefersDark ? 'dark' : 'light');
+            
+            document.documentElement.setAttribute('data-theme', theme);
+            
+            const toggleBtn = document.getElementById('themeToggle');
+            if (toggleBtn) {
+                toggleBtn.textContent = theme === 'dark' ? '☀️' : '🌙';
+                toggleBtn.title = `Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`;
+            }
+        }
         window.addEventListener('beforeinstallprompt', (e) => {
             console.log('Install prompt captured');
             e.preventDefault();
@@ -448,7 +773,6 @@
         // Install app function
         function installApp() {
             if (deferredPrompt) {
-                // Native install available
                 deferredPrompt.prompt();
                 deferredPrompt.userChoice.then((choiceResult) => {
                     if (choiceResult.outcome === 'accepted') {
@@ -461,9 +785,8 @@
                     deferredPrompt = null;
                 });
             } else {
-                // Fallback instructions
                 if (/iPhone|iPad|iPod/.test(navigator.userAgent)) {
-                    addLog('To install: Tap Share button → Add to Home Screen');
+                    addLog('To install: Tap Share → Add to Home Screen');
                 } else {
                     addLog('To install: Look for install option in browser menu');
                 }
@@ -480,7 +803,7 @@
         function addLog(message) {
             const log = document.getElementById('logArea');
             const time = new Date().toLocaleTimeString();
-            log.innerHTML += `${time}: ${message}<br>`;
+            log.innerHTML += `<span style="color: #9ca3af">${time}:</span> ${message}<br>`;
             log.scrollTop = log.scrollHeight;
         }
         
@@ -500,9 +823,9 @@
             if (scannedItems.size === 0) {
                 container.innerHTML = `
                     <div class="empty-state">
-                        <div class="empty-state-icon">📱</div>
-                        <div class="empty-state-text">No items scanned yet</div>
-                        <div class="empty-state-subtext">Start scanning to see items appear here</div>
+                        <div class="empty-icon">📦</div>
+                        <div class="empty-text">No items scanned</div>
+                        <div class="empty-subtext">Start scanning to see products appear here</div>
                     </div>
                 `;
                 return;
@@ -512,20 +835,22 @@
             scannedItems.forEach((item, barcode) => {
                 const difference = item.counted - item.currentStock;
                 const diffText = difference > 0 ? `+${difference}` : difference;
-                const diffColor = difference > 0 ? '#4caf50' : difference < 0 ? '#f44336' : '#666';
+                const diffClass = difference > 0 ? 'text-success' : difference < 0 ? 'text-danger' : '';
                 
                 html += `
-                    <div class="item-row">
+                    <div class="item-card">
                         <div class="item-name">${item.product}</div>
                         <div class="item-details">
-                            SKU: ${barcode} • Loyverse Stock: ${item.currentStock} • 
-                            <span style="color: ${diffColor}">Difference: ${diffText}</span>
+                            <strong>SKU:</strong> ${barcode} • <strong>Current Stock:</strong> ${item.currentStock} • 
+                            <strong>Difference:</strong> <span class="${diffClass}">${diffText}</span>
                         </div>
                         <div class="item-controls">
-                            <button class="count-btn count-btn-minus" onclick="adjustCount('${barcode}', -1)">−</button>
-                            <input type="number" class="count-input" value="${item.counted}" 
-                                   onchange="setCount('${barcode}', this.value)" min="0">
-                            <button class="count-btn count-btn-plus" onclick="adjustCount('${barcode}', 1)">+</button>
+                            <div class="count-controls">
+                                <button class="count-btn count-btn-minus" onclick="adjustCount('${barcode}', -1)">−</button>
+                                <input type="number" class="count-input" value="${item.counted}" 
+                                       onchange="setCount('${barcode}', this.value)" min="0">
+                                <button class="count-btn count-btn-plus" onclick="adjustCount('${barcode}', 1)">+</button>
+                            </div>
                         </div>
                     </div>
                 `;
@@ -540,7 +865,6 @@
                 const newCount = Math.max(0, item.counted + change);
                 item.counted = newCount;
                 
-                // Update total scans count
                 totalScans = Array.from(scannedItems.values()).reduce((sum, item) => sum + item.counted, 0);
                 document.getElementById('totalCount').textContent = totalScans;
                 
@@ -555,12 +879,11 @@
                 const oldCount = item.counted;
                 item.counted = Math.max(0, parseInt(newValue) || 0);
                 
-                // Update total scans count
                 totalScans = Array.from(scannedItems.values()).reduce((sum, item) => sum + item.counted, 0);
                 document.getElementById('totalCount').textContent = totalScans;
                 
                 renderItemsList();
-                addLog(`Set ${item.product}: ${oldCount} → ${item.counted}`);
+                addLog(`Updated ${item.product}: ${oldCount} → ${item.counted}`);
             }
         }
         
@@ -569,11 +892,11 @@
             const barcode = input.value.trim();
             
             if (!barcode) {
-                addLog('No barcode entered');
+                addLog('Please enter a barcode or SKU');
                 return;
             }
             
-            addLog(`Looking up: ${barcode} in Loyverse...`);
+            addLog(`Looking up ${barcode}...`);
             
             fetch('/scan', {
                 method: 'POST',
@@ -583,22 +906,23 @@
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    addLog(`FOUND: ${data.product} - Count: ${data.counted} (Stock: ${data.currentStock})`);
+                    addLog(`✓ Found: ${data.product} (Count: ${data.counted}, Stock: ${data.currentStock})`);
                     updateDisplay(barcode, data);
                     input.value = '';
                     input.focus();
                 } else {
-                    addLog(`ERROR: ${data.error}`);
+                    addLog(`✗ Error: ${data.error}`);
+                    input.focus();
                 }
             })
             .catch(error => {
-                addLog(`Connection error: ${error}`);
+                addLog(`✗ Connection error: ${error.message}`);
             });
         }
         
         function updateLoyverse() {
             if (scannedItems.size === 0) {
-                addLog('No scans to update');
+                addLog('No items to update');
                 return;
             }
             
@@ -610,13 +934,13 @@
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    addLog(`SUCCESS: ${data.message}`);
+                    addLog(`✓ Success: ${data.message}`);
                 } else {
-                    addLog(`UPDATE FAILED: ${data.error}`);
+                    addLog(`✗ Update failed: ${data.error}`);
                 }
             })
             .catch(error => {
-                addLog(`Update error: ${error}`);
+                addLog(`✗ Update error: ${error.message}`);
             });
         }
         
@@ -643,23 +967,25 @@
         
         // Initialize
         window.addEventListener('load', function() {
+            // Initialize theme first
+            initializeTheme();
+            
             document.getElementById('barcodeInput').focus();
-            addLog('Loyverse inventory scanner ready');
+            addLog('Scanner initialized and ready');
             
             console.log('Page loaded, checking install status...');
-            addLog('DEBUG: Checking if app is already installed...');
+            addLog('Checking installation status...');
             
-            // Show install banner by default if not already installed
             setTimeout(() => {
                 const isStandalone = window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches;
                 console.log('Is standalone:', isStandalone);
-                addLog(`DEBUG: Standalone mode: ${isStandalone}`);
+                addLog(`App mode: ${isStandalone ? 'Installed' : 'Browser'}`);
                 
                 if (!isStandalone) {
-                    addLog('DEBUG: Not installed, showing banner...');
+                    addLog('Install banner will appear when available');
                     showInstallBanner();
                 } else {
-                    addLog('DEBUG: Already installed, hiding banner');
+                    addLog('App is installed - install banner hidden');
                 }
             }, 1000);
             
@@ -668,11 +994,11 @@
                 navigator.serviceWorker.register('/sw.js')
                     .then((registration) => {
                         console.log('Service Worker registered:', registration);
-                        addLog('App ready for offline use');
+                        addLog('✓ Offline capability enabled');
                     })
                     .catch((error) => {
                         console.log('Service Worker registration failed:', error);
-                        addLog('Service Worker failed: ' + error.message);
+                        addLog('⚠ Offline capability unavailable');
                     });
             }
         });
