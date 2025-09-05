@@ -878,18 +878,26 @@
             container.innerHTML = html;
         }
         
-        // DELETE ITEM FIX
+        // DELETE ITEM FIX - Reset count when deleting
         function deleteItem(barcode) {
             const item = scannedItems.get(barcode);
             if (item && confirm(`Remove "${item.product}" from scan list?`)) {
+                // Subtract this item's count from total scans
                 totalScans -= item.counted;
+                
+                // Remove from scanned items
                 scannedItems.delete(barcode);
                 
+                // Update display - this will recalculate totals
                 document.getElementById('totalCount').textContent = totalScans;
                 document.getElementById('uniqueCount').textContent = scannedItems.size;
                 
                 renderItemsList();
-                addLog(`Removed ${item.product} from scan list`);
+                addLog(`Removed ${item.product} from scan list (freed ${item.counted} scans)`);
+                
+                // Reset the scan counter to reflect current state
+                totalScans = Array.from(scannedItems.values()).reduce((sum, item) => sum + item.counted, 0);
+                document.getElementById('totalCount').textContent = totalScans;
             }
         }
         
