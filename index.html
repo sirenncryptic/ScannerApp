@@ -33,14 +33,10 @@
             --white: #ffffff;
         }
         
-        /* Dark Mode Variables */
+        /* Dark mode variables */
         [data-theme="dark"] {
             --primary: #3b82f6;
             --primary-light: #60a5fa;
-            --accent: #3b82f6;
-            --success: #10b981;
-            --danger: #ef4444;
-            --warning: #f59e0b;
             --gray-50: #111827;
             --gray-100: #1f2937;
             --gray-200: #374151;
@@ -98,7 +94,7 @@
         .header-controls {
             display: flex;
             align-items: center;
-            gap: 1.5rem;
+            gap: 1rem;
         }
         
         .connection-status {
@@ -133,11 +129,6 @@
         
         .theme-toggle:hover {
             background: var(--gray-200);
-            border-color: var(--gray-400);
-        }
-        
-        .theme-icon {
-            font-size: 1.25rem;
         }
         
         .main-container {
@@ -162,29 +153,19 @@
             }
         }
         
-        /* Tablet Landscape & Desktop - FORCE HORIZONTAL LAYOUT */
-        @media (min-width: 1024px), 
-               (orientation: landscape) and (min-width: 768px) {
+        /* LANDSCAPE FIX - Force horizontal layout on tablets */
+        @media (min-width: 1024px) {
             .main-container {
                 grid-template-columns: 1fr 1fr;
                 gap: 3rem;
             }
         }
         
-        /* Force landscape layout on tablets in landscape mode */
-        @media (orientation: landscape) and (min-height: 500px) and (max-height: 900px) {
+        /* Force landscape on tablets in landscape orientation */
+        @media (orientation: landscape) and (min-width: 768px) {
             .main-container {
                 grid-template-columns: 1fr 1fr;
                 gap: 2rem;
-                padding: 1.5rem;
-            }
-            
-            .panel {
-                padding: 1.5rem;
-            }
-            
-            .log {
-                height: 180px;
             }
         }
         
@@ -476,7 +457,6 @@
             padding: 1.5rem;
             margin-bottom: 1rem;
             transition: border-color 0.2s ease, box-shadow 0.2s ease;
-            position: relative;
         }
         
         .item-card:hover {
@@ -511,8 +491,7 @@
             justify-content: center;
             cursor: pointer;
             transition: all 0.2s ease;
-            font-size: 1rem;
-            flex-shrink: 0;
+            font-size: 0.875rem;
         }
         
         .delete-btn:hover {
@@ -609,12 +588,6 @@
                 padding: 0.75rem;
                 font-size: 1rem;
             }
-            
-            .delete-btn {
-                width: 36px;
-                height: 36px;
-                font-size: 1.125rem;
-            }
         }
         
         .empty-state {
@@ -688,7 +661,7 @@
                     Loyverse Connected
                 </div>
                 <button class="theme-toggle" onclick="toggleTheme()" title="Toggle dark mode">
-                    <span class="theme-icon">🌙</span>
+                    <span id="themeIcon">🌙</span>
                 </button>
             </div>
         </div>
@@ -753,40 +726,33 @@
         let totalScans = 0;
         let scannedItems = new Map();
         let deferredPrompt = null;
-        let darkMode = false;
         
-        // Theme management
+        // DARK MODE TOGGLE FIX
+        function toggleTheme() {
+            const body = document.documentElement;
+            const icon = document.getElementById('themeIcon');
+            
+            if (body.hasAttribute('data-theme')) {
+                body.removeAttribute('data-theme');
+                icon.textContent = '🌙';
+                localStorage.setItem('theme', 'light');
+            } else {
+                body.setAttribute('data-theme', 'dark');
+                icon.textContent = '☀️';
+                localStorage.setItem('theme', 'dark');
+            }
+        }
+        
         function initializeTheme() {
             const savedTheme = localStorage.getItem('theme');
-            if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-                enableDarkMode();
+            const icon = document.getElementById('themeIcon');
+            
+            if (savedTheme === 'dark') {
+                document.documentElement.setAttribute('data-theme', 'dark');
+                icon.textContent = '☀️';
             } else {
-                enableLightMode();
+                icon.textContent = '🌙';
             }
-        }
-        
-        function toggleTheme() {
-            if (darkMode) {
-                enableLightMode();
-            } else {
-                enableDarkMode();
-            }
-        }
-        
-        function enableDarkMode() {
-            darkMode = true;
-            document.documentElement.setAttribute('data-theme', 'dark');
-            document.querySelector('.theme-icon').textContent = '☀️';
-            localStorage.setItem('theme', 'dark');
-            addLog('Dark mode enabled');
-        }
-        
-        function enableLightMode() {
-            darkMode = false;
-            document.documentElement.removeAttribute('data-theme');
-            document.querySelector('.theme-icon').textContent = '🌙';
-            localStorage.setItem('theme', 'light');
-            addLog('Light mode enabled');
         }
         
         // Capture the install prompt
@@ -891,9 +857,7 @@
                     <div class="item-card">
                         <div class="item-header">
                             <div class="item-name">${item.product}</div>
-                            <button class="delete-btn" onclick="deleteItem('${barcode}')" title="Remove item">
-                                🗑️
-                            </button>
+                            <button class="delete-btn" onclick="deleteItem('${barcode}')" title="Remove item">🗑️</button>
                         </div>
                         <div class="item-details">
                             <strong>SKU:</strong> ${barcode} • <strong>Current Stock:</strong> ${item.currentStock} • 
@@ -914,16 +878,13 @@
             container.innerHTML = html;
         }
         
+        // DELETE ITEM FIX
         function deleteItem(barcode) {
             const item = scannedItems.get(barcode);
             if (item && confirm(`Remove "${item.product}" from scan list?`)) {
-                // Subtract this item's count from total scans
                 totalScans -= item.counted;
-                
-                // Remove from scanned items
                 scannedItems.delete(barcode);
                 
-                // Update display
                 document.getElementById('totalCount').textContent = totalScans;
                 document.getElementById('uniqueCount').textContent = scannedItems.size;
                 
@@ -979,9 +940,9 @@
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    // Ensure proper parsing of stock numbers
-                    const currentStock = parseInt(data.currentStock) || 0;
-                    const counted = data.counted || 1;
+                    // STOCK PARSING FIX - Properly handle double digits
+                    const currentStock = parseInt(data.currentStock, 10) || 0;
+                    const counted = parseInt(data.counted, 10) || 1;
                     
                     const itemData = {
                         product: data.product,
