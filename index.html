@@ -900,12 +900,29 @@
                                        onchange="setCount('${barcode}', this.value)" min="0">
                                 <button class="count-btn plus" onclick="adjustCount('${barcode}', 1)">+</button>
                             </div>
+                            <button class="delete-btn" onclick="deleteItem('${barcode}')" title="Delete item">🗑</button>
                         </div>
                     </div>
                 `;
             });
             
             container.innerHTML = html;
+        }
+        
+        function deleteItem(barcode) {
+            const item = scannedItems.get(barcode);
+            if (item && confirm(`Delete ${item.product} from scan list?`)) {
+                scannedItems.delete(barcode);
+                
+                // Recalculate total scans
+                totalScans = Array.from(scannedItems.values()).reduce((sum, item) => sum + item.counted, 0);
+                document.getElementById('totalCount').textContent = totalScans;
+                document.getElementById('uniqueCount').textContent = scannedItems.size;
+                
+                renderItemsList();
+                saveToLocalStorage();
+                addLog(`Deleted ${item.product} from scan list`);
+            }
         }
         
         function adjustCount(barcode, change) {
