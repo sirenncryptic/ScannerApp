@@ -33,6 +33,27 @@
             --white: #ffffff;
         }
         
+        /* Dark Mode Variables */
+        [data-theme="dark"] {
+            --primary: #3b82f6;
+            --primary-light: #60a5fa;
+            --accent: #3b82f6;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --gray-50: #111827;
+            --gray-100: #1f2937;
+            --gray-200: #374151;
+            --gray-300: #4b5563;
+            --gray-400: #6b7280;
+            --gray-500: #9ca3af;
+            --gray-600: #d1d5db;
+            --gray-700: #e5e7eb;
+            --gray-800: #f3f4f6;
+            --gray-900: #f9fafb;
+            --white: #1f2937;
+        }
+        
         * {
             margin: 0;
             padding: 0;
@@ -74,6 +95,12 @@
             letter-spacing: -0.025em;
         }
         
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+        
         .connection-status {
             display: flex;
             align-items: center;
@@ -88,6 +115,29 @@
             height: 8px;
             border-radius: 50%;
             background: var(--success);
+        }
+        
+        .theme-toggle {
+            background: var(--gray-100);
+            border: 1px solid var(--gray-300);
+            border-radius: 8px;
+            padding: 0.5rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            transition: all 0.2s ease;
+        }
+        
+        .theme-toggle:hover {
+            background: var(--gray-200);
+            border-color: var(--gray-400);
+        }
+        
+        .theme-icon {
+            font-size: 1.25rem;
         }
         
         .main-container {
@@ -112,11 +162,29 @@
             }
         }
         
-        /* Tablet Landscape & Desktop */
-        @media (min-width: 1024px) {
+        /* Tablet Landscape & Desktop - FORCE HORIZONTAL LAYOUT */
+        @media (min-width: 1024px), 
+               (orientation: landscape) and (min-width: 768px) {
             .main-container {
                 grid-template-columns: 1fr 1fr;
                 gap: 3rem;
+            }
+        }
+        
+        /* Force landscape layout on tablets in landscape mode */
+        @media (orientation: landscape) and (min-height: 500px) and (max-height: 900px) {
+            .main-container {
+                grid-template-columns: 1fr 1fr;
+                gap: 2rem;
+                padding: 1.5rem;
+            }
+            
+            .panel {
+                padding: 1.5rem;
+            }
+            
+            .log {
+                height: 180px;
             }
         }
         
@@ -206,6 +274,7 @@
             outline: none;
             background: var(--white);
             font-weight: 500;
+            color: var(--gray-900);
         }
         
         .barcode-input:focus {
@@ -263,6 +332,7 @@
             font-size: 0.8125rem;
             line-height: 1.5;
             flex: 1;
+            color: var(--gray-700);
         }
         
         @media (min-width: 768px) {
@@ -406,6 +476,7 @@
             padding: 1.5rem;
             margin-bottom: 1rem;
             transition: border-color 0.2s ease, box-shadow 0.2s ease;
+            position: relative;
         }
         
         .item-card:hover {
@@ -413,11 +484,40 @@
             box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
         }
         
+        .item-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+        }
+        
         .item-name {
             font-size: 1rem;
             font-weight: 600;
             color: var(--gray-900);
-            margin-bottom: 0.5rem;
+            flex: 1;
+            margin-right: 1rem;
+        }
+        
+        .delete-btn {
+            background: var(--white);
+            border: 1px solid var(--danger);
+            color: var(--danger);
+            border-radius: 6px;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 1rem;
+            flex-shrink: 0;
+        }
+        
+        .delete-btn:hover {
+            background: var(--danger);
+            color: var(--white);
         }
         
         .item-details {
@@ -484,6 +584,7 @@
             font-weight: 600;
             background: var(--white);
             transition: border-color 0.2s ease, box-shadow 0.2s ease;
+            color: var(--gray-900);
         }
         
         .count-input:focus {
@@ -507,6 +608,12 @@
                 width: 80px;
                 padding: 0.75rem;
                 font-size: 1rem;
+            }
+            
+            .delete-btn {
+                width: 36px;
+                height: 36px;
+                font-size: 1.125rem;
             }
         }
         
@@ -575,9 +682,14 @@
     <header class="app-header">
         <div class="header-content">
             <div class="app-title">Inked Out Supply Scanner</div>
-            <div class="connection-status">
-                <div class="status-indicator"></div>
-                Loyverse Connected
+            <div class="header-controls">
+                <div class="connection-status">
+                    <div class="status-indicator"></div>
+                    Loyverse Connected
+                </div>
+                <button class="theme-toggle" onclick="toggleTheme()" title="Toggle dark mode">
+                    <span class="theme-icon">🌙</span>
+                </button>
             </div>
         </div>
     </header>
@@ -641,6 +753,41 @@
         let totalScans = 0;
         let scannedItems = new Map();
         let deferredPrompt = null;
+        let darkMode = false;
+        
+        // Theme management
+        function initializeTheme() {
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                enableDarkMode();
+            } else {
+                enableLightMode();
+            }
+        }
+        
+        function toggleTheme() {
+            if (darkMode) {
+                enableLightMode();
+            } else {
+                enableDarkMode();
+            }
+        }
+        
+        function enableDarkMode() {
+            darkMode = true;
+            document.documentElement.setAttribute('data-theme', 'dark');
+            document.querySelector('.theme-icon').textContent = '☀️';
+            localStorage.setItem('theme', 'dark');
+            addLog('Dark mode enabled');
+        }
+        
+        function enableLightMode() {
+            darkMode = false;
+            document.documentElement.removeAttribute('data-theme');
+            document.querySelector('.theme-icon').textContent = '🌙';
+            localStorage.setItem('theme', 'light');
+            addLog('Light mode enabled');
+        }
         
         // Capture the install prompt
         window.addEventListener('beforeinstallprompt', (e) => {
@@ -742,7 +889,12 @@
                 
                 html += `
                     <div class="item-card">
-                        <div class="item-name">${item.product}</div>
+                        <div class="item-header">
+                            <div class="item-name">${item.product}</div>
+                            <button class="delete-btn" onclick="deleteItem('${barcode}')" title="Remove item">
+                                🗑️
+                            </button>
+                        </div>
                         <div class="item-details">
                             <strong>SKU:</strong> ${barcode} • <strong>Current Stock:</strong> ${item.currentStock} • 
                             <strong>Difference:</strong> <span class="${diffClass}">${diffText}</span>
@@ -760,6 +912,24 @@
             });
             
             container.innerHTML = html;
+        }
+        
+        function deleteItem(barcode) {
+            const item = scannedItems.get(barcode);
+            if (item && confirm(`Remove "${item.product}" from scan list?`)) {
+                // Subtract this item's count from total scans
+                totalScans -= item.counted;
+                
+                // Remove from scanned items
+                scannedItems.delete(barcode);
+                
+                // Update display
+                document.getElementById('totalCount').textContent = totalScans;
+                document.getElementById('uniqueCount').textContent = scannedItems.size;
+                
+                renderItemsList();
+                addLog(`Removed ${item.product} from scan list`);
+            }
         }
         
         function adjustCount(barcode, change) {
@@ -809,8 +979,18 @@
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    addLog(`✓ Found: ${data.product} (Count: ${data.counted}, Stock: ${data.currentStock})`);
-                    updateDisplay(barcode, data);
+                    // Ensure proper parsing of stock numbers
+                    const currentStock = parseInt(data.currentStock) || 0;
+                    const counted = data.counted || 1;
+                    
+                    const itemData = {
+                        product: data.product,
+                        currentStock: currentStock,
+                        counted: counted
+                    };
+                    
+                    addLog(`✓ Found: ${data.product} (Count: ${counted}, Stock: ${currentStock})`);
+                    updateDisplay(barcode, itemData);
                     input.value = '';
                     input.focus();
                 } else {
