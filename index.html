@@ -1026,13 +1026,14 @@
             // Initialize theme first
             initializeTheme();
             
-            // Initialize anti-concatenation scanner
+            // Initialize universal scanner protection
             document.getElementById('scanInput').focus();
             updateQueueStatus('Ready to scan');
-            addLog('Scanner initialized - ANTI-CONCATENATION protection enabled');
-            addLog('🛡️ Input clears INSTANTLY when scan detected');
-            addLog('⚡ Prevents TESTLOYTESTLOY concatenation issues');
-            addLog('🔊 Error beeps = LOUD, Success beeps = quiet');
+            addLog('Scanner initialized - UNIVERSAL SCANNER PROTECTION');
+            addLog('🌐 Works with ANY barcode scanner (Zebra, Honeywell, Datalogic, etc.)');
+            addLog('🛡️ Multi-method detection: speed, length, timing, Enter key');
+            addLog('🔒 Triple-layer protection against concatenation');
+            addLog('🔊 Audio feedback on blocked attempts');
             
             console.log('Page loaded, checking install status...');
             addLog('Checking installation status...');
