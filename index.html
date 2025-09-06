@@ -1026,9 +1026,13 @@
             // Initialize theme first
             initializeTheme();
             
-            document.getElementById('barcodeInput').focus();
-            addLog('Scanner initialized and ready - Auto-scan enabled');
-            addLog('💡 Tip: Scan rapidly - duplicates auto-increment!');
+            // Initialize smart scanner detection
+            document.getElementById('scanInput').focus();
+            updateQueueStatus('Ready to scan');
+            addLog('Scanner initialized - SMART scanner detection enabled');
+            addLog('🤖 Detects when scanner finishes automatically');
+            addLog('⚡ Fast input = scanner, slow input = manual typing');
+            addLog('🔊 Error beeps = LOUD, Success beeps = quiet');
             
             console.log('Page loaded, checking install status...');
             addLog('Checking installation status...');
