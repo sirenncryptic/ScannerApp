@@ -1026,12 +1026,12 @@
             // Initialize theme first
             initializeTheme();
             
-            // Initialize smart scanner detection
+            // Initialize anti-concatenation scanner
             document.getElementById('scanInput').focus();
             updateQueueStatus('Ready to scan');
-            addLog('Scanner initialized - SMART scanner detection enabled');
-            addLog('🤖 Detects when scanner finishes automatically');
-            addLog('⚡ Fast input = scanner, slow input = manual typing');
+            addLog('Scanner initialized - ANTI-CONCATENATION protection enabled');
+            addLog('🛡️ Input clears INSTANTLY when scan detected');
+            addLog('⚡ Prevents TESTLOYTESTLOY concatenation issues');
             addLog('🔊 Error beeps = LOUD, Success beeps = quiet');
             
             console.log('Page loaded, checking install status...');
